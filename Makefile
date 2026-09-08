@@ -1,0 +1,181 @@
+.DEFAULT_GOAL := help
+.PHONY: help install clean \
+        start start-ios start-android start-web start-tunnel \
+        lint lint-fix typecheck test test-watch check hooks \
+        build-ios-preview build-ios-prod \
+        build-android-preview build-android-prod \
+        build-all-prod \
+        submit-ios submit-android submit-all \
+        ship-ios ship-android \
+        build-list open-expo
+
+# ── Colours ───────────────────────────────────────────────────────────────────
+BOLD  := \033[1m
+CYAN  := \033[36m
+GREEN := \033[32m
+RESET := \033[0m
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Help
+# ─────────────────────────────────────────────────────────────────────────────
+help:
+	@echo ""
+	@echo "$(BOLD)$(CYAN)Beer Seeker — available targets$(RESET)"
+	@echo ""
+	@echo "$(BOLD)Setup$(RESET)"
+	@echo "  install              Install all npm dependencies"
+	@echo "  clean                Remove node_modules and Expo cache"
+	@echo ""
+	@echo "$(BOLD)Dev servers$(RESET)"
+	@echo "  start                Start Expo dev server (Expo Go)"
+	@echo "  start-ios            Start and open iOS simulator"
+	@echo "  start-android        Start and open Android emulator"
+	@echo "  start-web            Start web version"
+	@echo "  start-tunnel         Start dev server over an ngrok tunnel (share off-network)"
+	@echo ""
+	@echo "$(BOLD)Code quality$(RESET)"
+	@echo "  lint                 Run oxlint (zero warnings allowed)"
+	@echo "  lint-fix             Run oxlint with auto-fix"
+	@echo "  format               Format sources with oxfmt"
+	@echo "  format-check         Verify formatting without writing"
+	@echo "  typecheck            Run tsc --noEmit"
+	@echo "  test                 Run the vitest unit tests once"
+	@echo "  test-watch           Run vitest in watch mode"
+	@echo "  check                lint + format-check + typecheck + test (run before committing)"
+	@echo "  hooks                Enable the pre-commit hook in .githooks"
+	@echo ""
+	@echo "$(BOLD)EAS Builds$(RESET)"
+	@echo "  build-ios-preview    Build iOS .ipa for internal distribution"
+	@echo "  build-ios-prod       Build iOS production .ipa"
+	@echo "  build-android-preview  Build Android .apk for sideloading"
+	@echo "  build-android-prod   Build Android production .aab"
+	@echo "  build-all-prod       Build both platforms (production)"
+	@echo ""
+	@echo "$(BOLD)EAS Submit$(RESET)"
+	@echo "  submit-ios           Submit latest iOS build to App Store"
+	@echo "  submit-android       Submit latest Android build to Play Store"
+	@echo "  submit-all           Submit both platforms"
+	@echo ""
+	@echo "$(BOLD)Shortcuts$(RESET)"
+	@echo "  ship-ios             build-ios-prod + submit-ios (--auto-submit)"
+	@echo "  ship-android         build-android-prod + submit-android (--auto-submit)"
+	@echo "  build-list           List recent EAS builds"
+	@echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Setup
+# ─────────────────────────────────────────────────────────────────────────────
+install:
+	@echo "$(CYAN)Installing dependencies…$(RESET)"
+	npm install --legacy-peer-deps
+
+clean:
+	@echo "$(CYAN)Cleaning node_modules and Expo cache…$(RESET)"
+	rm -rf node_modules .expo dist
+	@echo "$(GREEN)Done. Run 'make install' to reinstall.$(RESET)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dev servers
+# ─────────────────────────────────────────────────────────────────────────────
+start:
+	npx expo start
+
+start-ios:
+	npx expo start --ios
+
+start-android:
+	npx expo start --android
+
+start-web:
+	npx expo start --web
+
+start-tunnel:
+	npx expo start --tunnel
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Code quality
+# ─────────────────────────────────────────────────────────────────────────────
+lint:
+	@echo "$(CYAN)Running oxlint…$(RESET)"
+	npx oxlint . --max-warnings 0
+
+lint-fix:
+	@echo "$(CYAN)Running oxlint with auto-fix…$(RESET)"
+	npx oxlint . --fix
+
+format:
+	@echo "$(CYAN)Running oxfmt…$(RESET)"
+	npx oxfmt .
+
+format-check:
+	@echo "$(CYAN)Checking formatting with oxfmt…$(RESET)"
+	npx oxfmt --check .
+
+typecheck:
+	@echo "$(CYAN)Running TypeScript type check…$(RESET)"
+	npx tsc --noEmit
+
+test:
+	@echo "$(CYAN)Running unit tests…$(RESET)"
+	npx vitest run
+
+test-watch:
+	npx vitest
+
+check: lint format-check typecheck test
+	@echo "$(GREEN)All checks passed.$(RESET)"
+
+hooks:
+	@echo "$(CYAN)Enabling git hooks from .githooks…$(RESET)"
+	git config core.hooksPath .githooks
+	chmod +x .githooks/*
+	@echo "$(GREEN)Pre-commit hook active. Bypass with 'git commit --no-verify'.$(RESET)"
+
+build-ios-preview:
+	@echo "$(CYAN)Building iOS (preview)…$(RESET)"
+	npx eas-cli build --platform ios --profile preview --non-interactive
+
+build-ios-prod:
+	@echo "$(CYAN)Building iOS (production)…$(RESET)"
+	npx eas-cli build --platform ios --profile production --non-interactive
+
+build-android-preview:
+	@echo "$(CYAN)Building Android APK (preview)…$(RESET)"
+	npx eas-cli build --platform android --profile preview --non-interactive
+
+build-android-prod:
+	@echo "$(CYAN)Building Android (production)…$(RESET)"
+	npx eas-cli build --platform android --profile production --non-interactive
+
+build-all-prod:
+	@echo "$(CYAN)Building both platforms (production)…$(RESET)"
+	npx eas-cli build --platform all --profile production --non-interactive
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EAS Submit
+# ─────────────────────────────────────────────────────────────────────────────
+submit-ios:
+	@echo "$(CYAN)Submitting iOS to App Store…$(RESET)"
+	npx eas-cli submit --platform ios --latest
+
+submit-android:
+	@echo "$(CYAN)Submitting Android to Play Store…$(RESET)"
+	npx eas-cli submit --platform android --latest
+
+submit-all:
+	@echo "$(CYAN)Submitting both platforms…$(RESET)"
+	npx eas-cli submit --platform all --latest
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shortcuts
+# ─────────────────────────────────────────────────────────────────────────────
+ship-ios:
+	@echo "$(CYAN)Building and submitting iOS…$(RESET)"
+	npx eas-cli build --platform ios --profile production --auto-submit --non-interactive
+
+ship-android:
+	@echo "$(CYAN)Building and submitting Android…$(RESET)"
+	npx eas-cli build --platform android --profile production --auto-submit --non-interactive
+
+build-list:
+	npx eas-cli build:list

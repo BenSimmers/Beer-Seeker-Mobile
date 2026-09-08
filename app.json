@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Beer Seeker",
+    "slug": "liquorstore",
+    "version": "1.0.2",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      "expo-font",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "This app uses device motion to keep the compass pointing the right way as you turn."
+        }
+      ]
+    ],
+    "ios": {
+      "buildNumber": "3",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.bensimmers.liquorstore"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "003cc16d-ab15-4935-a1c2-735e5985cd41"
+      }
+    },
+    "android": {
+      "package": "com.bensimmers.liquorstore"
+    }
+  }
+}
