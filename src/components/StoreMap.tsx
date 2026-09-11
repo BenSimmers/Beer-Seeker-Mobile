@@ -68,36 +68,13 @@ export const StoreMap: React.FC<Props> = ({
         rotateEnabled={!isThumbnail}
         pitchEnabled={!isThumbnail}
       >
-        {isThumbnail ? (
-          <Marker
-            coordinate={{ latitude: store.lat, longitude: store.lng }}
-            title={store.name}
-            description={store.vicinity || undefined}
-            pinColor={colors.primary}
-            onCalloutPress={() => openInMaps(store)}
-          />
-        ) : (
-          // title/description are what make the callout render at all —
-          // without them onCalloutPress can never fire.
-          <Marker
-            coordinate={{ latitude: store.lat, longitude: store.lng }}
-            anchor={{ x: 0.5, y: 1 }}
-            title={store.name}
-            description={store.vicinity || undefined}
-            onCalloutPress={() => openInMaps(store)}
-          >
-            <View style={styles.markerWrap}>
-              <View style={styles.markerBadge}>
-                <Ionicons name="storefront-outline" size={18} color={colors.background} />
-              </View>
-              <View style={styles.markerLabelPill}>
-                <Text style={styles.markerLabelText} numberOfLines={1}>
-                  {store.name}
-                </Text>
-              </View>
-            </View>
-          </Marker>
-        )}
+        <Marker
+          coordinate={{ latitude: store.lat, longitude: store.lng }}
+          title={store.name}
+          description={store.vicinity || undefined}
+          pinColor={colors.primary}
+          onCalloutPress={() => openInMaps(store)}
+        />
       </MapView>
       {isThumbnail && (
         <View style={styles.expandHint}>
@@ -179,31 +156,5 @@ const useStyles = makeStyles((colors) => ({
     color: colors.headline,
     fontFamily: fonts.labelBold,
     fontSize: 12,
-  },
-  markerWrap: {
-    alignItems: "center",
-  },
-  markerBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-  markerLabelPill: {
-    marginTop: 4,
-    maxWidth: 140,
-    backgroundColor: colors.background + "e6",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  markerLabelText: {
-    color: colors.headline,
-    fontFamily: fonts.labelBold,
-    fontSize: 11,
   },
 }));
