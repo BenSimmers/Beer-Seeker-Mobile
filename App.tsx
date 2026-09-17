@@ -20,6 +20,7 @@ import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AGE_VERIFIED_KEY, AgeGate } from "./src/components/AgeGate";
+import { ToastProvider } from "./src/components/Toast";
 import { BrowseScreen } from "./src/screens/BrowseScreen";
 import { CompassScreen } from "./src/screens/CompassScreen";
 import { AboutScreen } from "./src/screens/AboutScreen";
@@ -158,8 +159,10 @@ function AppRoot() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <MainTabs />
+      <ToastProvider>
+        <StatusBar style="light" />
+        <MainTabs />
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }

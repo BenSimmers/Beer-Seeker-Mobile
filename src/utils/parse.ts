@@ -11,13 +11,14 @@ export const isRecord = (v: unknown): v is Record<string, unknown> =>
 export const asRecord = (v: unknown): Record<string, unknown> | undefined =>
   isRecord(v) ? v : undefined;
 
-export const asString = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
+export const asString = (v: unknown): string | undefined =>
+  typeof v === "string" ? v : undefined;
 
-/** Rejects NaN and ±Infinity, which JSON.parse happily produces from `1e999`. */
 export const asNumber = (v: unknown): number | undefined =>
   typeof v === "number" && Number.isFinite(v) ? v : undefined;
 
 export const asBoolean = (v: unknown): boolean | undefined =>
   typeof v === "boolean" ? v : undefined;
 
-export const asArray = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : []);
+export const asArray = (v: unknown): readonly unknown[] =>
+  Array.isArray(v) ? v : [];

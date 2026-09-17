@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, Text } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { CATEGORY_FILTERS, CATEGORY_FILTER_LABELS } from "../types";
 import type { CategoryFilter } from "../types";
 import { fonts, makeStyles } from "../theme";
@@ -23,11 +23,8 @@ export const CategoryChips: React.FC<Props> = ({
   const styles = useStyles();
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.chipRowOuter}
-      contentContainerStyle={[styles.chipRow, { paddingHorizontal: contentPadding }]}
+    <View
+      style={[styles.chipRowOuter, { paddingHorizontal: contentPadding }]}
     >
       {CATEGORY_FILTERS.map((f) => (
         <Pressable
@@ -41,22 +38,17 @@ export const CategoryChips: React.FC<Props> = ({
           </Text>
         </Pressable>
       ))}
-    </ScrollView>
+    </View>
   );
 };
 
 const useStyles = makeStyles((colors) => ({
   chipRowOuter: {
-    // Centred parents (the compass) would otherwise shrink the row to its content.
-    alignSelf: "stretch",
-    flexGrow: 0,
-    height: 48,
-    marginBottom: 8,
-  },
-  chipRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     gap: 8,
+    marginBottom: 8,
   },
   chip: {
     height: 32,

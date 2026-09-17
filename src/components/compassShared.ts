@@ -13,6 +13,7 @@ export interface CompassProps {
   store: LiquorStore | null;
   userLocation: UserLocation | null;
   loading?: boolean;
+  onPress?: () => void;
 }
 
 // The hook feeds these unwrapped degrees, so map 1:1 and extend past the range

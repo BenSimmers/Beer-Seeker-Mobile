@@ -126,10 +126,10 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
         measured && { height: expandedHeight },
         { transform: [{ translateY }] },
       ]}
+      {...panResponder.panHandlers}
     >
       <View
         style={styles.summary}
-        {...panResponder.panHandlers}
         onLayout={(e) => setCollapsedHeight(e.nativeEvent.layout.height)}
       >
         <Pressable onPress={toggle} hitSlop={12} style={styles.handleTap}>

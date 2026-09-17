@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, SectionList, Text, TextInput, View } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CategoryChips } from "../components/CategoryChips";
-import { ErrorBanner, RefreshButton } from "../components/common";
+import { ErrorBanner } from "../components/common";
 import { callStore, openInMaps } from "../components/StoreCard";
 import { StoreMapModal } from "../components/StoreMapModal";
 import { useNearbyPlaces } from "../hooks/useNearbyPlaces";
@@ -78,7 +78,6 @@ export const BrowseScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.topBar}>
         <Text style={styles.topBarTitle}>Compass</Text>
-        <RefreshButton onPress={refresh} disabled={loading} />
       </View>
 
       <View style={styles.header}>
