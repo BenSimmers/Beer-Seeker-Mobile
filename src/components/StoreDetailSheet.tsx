@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { LiquorStore, UserLocation } from "../types";
 import { fonts, makeStyles, useTheme } from "../theme";
 import { bearingToCardinal, calculateBearing, formatDistance } from "../utils/geo";
-import { callStore, openInMaps } from "./StoreCard";
+import { callStore, openInMaps } from "../services/storeInteractions";
 
 type Props = {
   store: LiquorStore;

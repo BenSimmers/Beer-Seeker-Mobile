@@ -1,45 +1,15 @@
-import { Alert, Linking, Platform, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
 import type { LiquorStore, UserLocation } from "../types";
 import { fonts, makeStyles, useTheme } from "../theme";
 import { formatDistance, formatWalkTime, calculateBearing, bearingToCardinal } from "../utils/geo";
-import React from "react";
+import { openInMaps } from "../services/storeInteractions";
 
 type Props = {
   store: LiquorStore;
   dimmed?: boolean;
   userLocation?: UserLocation | null;
-};
-
-// Native scheme first, web URL second. Platform.OS is not narrowed to a lookup
-// key, so unknown platforms fall through to the web URL instead of throwing.
-const mapsUrls = (store: LiquorStore): string[] => {
-  const coords = `${store.lat},${store.lng}`;
-  // Parentheses break the geo: label delimiters and survive encodeURIComponent
-  const label = encodeURIComponent(store.name.replace(/[()]/g, ""));
-  const web = `https://www.google.com/maps/search/?api=1&query=${coords}`;
-
-  if (Platform.OS === "ios") return [`maps:0,0?q=${label}@${coords}`, web];
-  if (Platform.OS === "android") return [`geo:${coords}?q=${coords}(${label})`, web];
-  return [web];
-};
-
-export const openInMaps = async (store: LiquorStore): Promise<void> => {
-  for (const url of mapsUrls(store)) {
-    try {
-      await Linking.openURL(url);
-      return;
-    } catch {
-      // no handler for this scheme — try the next candidate
-    }
-  }
-  Alert.alert("No maps app found", "Install Google Maps to get directions.");
-};
-
-export const callStore = (phoneNumber: string): void => {
-  Linking.openURL(`tel:${phoneNumber}`).catch(() => {
-    Alert.alert("Unable to call", "Your device does not support calling.");
-  });
 };
 
 export const StoreCard: React.FC<Props> = ({ store, dimmed = false, userLocation }) => {

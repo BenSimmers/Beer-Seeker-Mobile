@@ -1,13 +1,13 @@
 import React from "react";
 import { Pressable } from "react-native";
-import { usePreferences } from "../preferences";
-import { ClassicCompass } from "./ClassicCompass";
-import { ModernCompass } from "./ModernCompass";
-import type { CompassProps } from "./compassShared";
-import { makeStyles } from "../theme";
+import { usePreferences } from "../../preferences";
+import { ClassicCompass } from "../ClassicCompass";
+import { ModernCompass } from "../ModernCompass";
+import type { CompassProps } from "../compassShared";
+import { useStyles } from "./styles";
 
-export { COMPASS_SIZE } from "./compassShared";
-export type { CompassProps } from "./compassShared";
+export { COMPASS_SIZE } from "../compassShared";
+export type { CompassProps } from "../compassShared";
 
 export const Compass: React.FC<CompassProps> = ({ onPress, ...props }) => {
   const { compassStyle } = usePreferences();
@@ -23,10 +23,3 @@ export const Compass: React.FC<CompassProps> = ({ onPress, ...props }) => {
     </Pressable>
   );
 };
-
-const useStyles = makeStyles(() => ({
-  compass: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-}));

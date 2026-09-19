@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { Platform, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import MapView, { Marker, type Region } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
-import type { LiquorStore, UserLocation } from "../types";
-import { fonts, makeStyles, makeThemed, useTheme } from "../theme";
-import { formatDistance } from "../utils/geo";
-import { openInMaps } from "../services/storeInteractions";
+import type { LiquorStore, UserLocation } from "../../types";
+import { useTheme } from "../../theme";
+import { formatDistance } from "../../utils/geo";
+import { openInMaps } from "../../services/storeInteractions";
+import { useDarkMapStyle, useStyles } from "./styles";
 
 type Props = {
   store: LiquorStore;
@@ -15,7 +16,6 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-// Padding multiplier so both the user and the store sit inside the viewport
 const REGION_PADDING = 2.5;
 const MIN_DELTA = 0.01;
 
@@ -40,7 +40,6 @@ export const StoreMap: React.FC<Props> = ({
   const region = useMemo(() => regionFor(store, userLocation), [store, userLocation]);
   const isThumbnail = variant === "thumbnail";
 
-  // initialRegion is only read on mount; follow store/user updates manually
   useEffect(() => {
     mapRef.current?.animateToRegion(region, 400);
   }, [region]);
@@ -90,71 +89,3 @@ export const StoreMap: React.FC<Props> = ({
     </View>
   );
 };
-
-// Google Maps (Android) styling to match the app's dark palette;
-// iOS Apple Maps uses userInterfaceStyle="dark" instead
-const useDarkMapStyle = makeThemed((colors) => [
-  { elementType: "geometry", stylers: [{ color: colors.surface }] },
-  { elementType: "labels.text.fill", stylers: [{ color: colors.body }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: colors.background }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: colors.surfaceAlt }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: colors.mapWater }] },
-]);
-
-const useStyles = makeStyles((colors) => ({
-  mapCard: {
-    width: "100%",
-    height: 180,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 14,
-  },
-  mapCardThumbnail: {
-    height: 84,
-    marginBottom: 10,
-  },
-  mapCardDimmed: {
-    opacity: 0.45,
-  },
-  map: {
-    flex: 1,
-  },
-  mapNonInteractive: {
-    pointerEvents: "none",
-  },
-  expandHint: {
-    position: "absolute",
-    right: 8,
-    bottom: 8,
-    backgroundColor: colors.surfaceAlt + "ee",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  expandHintText: {
-    color: colors.headline,
-    fontFamily: fonts.label,
-    fontSize: 10,
-  },
-  distanceBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.background + "dd",
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  distanceBadgeText: {
-    color: colors.headline,
-    fontFamily: fonts.labelBold,
-    fontSize: 12,
-  },
-}));
