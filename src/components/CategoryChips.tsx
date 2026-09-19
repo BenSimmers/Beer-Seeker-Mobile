@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { CATEGORY_FILTERS, CATEGORY_FILTER_LABELS } from "../types";
 import type { CategoryFilter } from "../types";
 import { fonts, makeStyles } from "../theme";
@@ -7,10 +7,9 @@ import { fonts, makeStyles } from "../theme";
 type Props = {
   value: CategoryFilter;
   onChange: (filter: CategoryFilter) => void;
-  /** Nearby totals per filter, appended to each label. Omitted on the compass. */
   counts?: Partial<Record<CategoryFilter, number>>;
-  /** Inset of the first and last chip; 0 when the parent already pads its content. */
   contentPadding?: number;
+  scrollable?: boolean;
 };
 
 /** The horizontal category picker shared by Browse and Compass. */
@@ -19,12 +18,17 @@ export const CategoryChips: React.FC<Props> = ({
   onChange,
   counts,
   contentPadding = 20,
+  scrollable = false,
 }) => {
   const styles = useStyles();
 
-  return (
+  const chipRow = (
     <View
-      style={[styles.chipRowOuter, { paddingHorizontal: contentPadding }]}
+      style={[
+        styles.chipRowOuter,
+        scrollable && styles.chipRowScrollable,
+        { paddingHorizontal: contentPadding },
+      ]}
     >
       {CATEGORY_FILTERS.map((f) => (
         <Pressable
@@ -40,6 +44,16 @@ export const CategoryChips: React.FC<Props> = ({
       ))}
     </View>
   );
+
+  if (scrollable) {
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {chipRow}
+      </ScrollView>
+    );
+  }
+
+  return chipRow;
 };
 
 const useStyles = makeStyles((colors) => ({
@@ -49,6 +63,9 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     gap: 8,
     marginBottom: 8,
+  },
+  chipRowScrollable: {
+    flexWrap: "nowrap",
   },
   chip: {
     height: 32,

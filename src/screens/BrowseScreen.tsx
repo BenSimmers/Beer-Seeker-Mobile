@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, RefreshControl, SectionList, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, RefreshControl, SectionList, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CategoryChips } from "../components/CategoryChips";
@@ -21,6 +21,8 @@ export const BrowseScreen: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<NearbyPlace | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [sortByOpenFirst, setSortByOpenFirst] = useState(false);
   const { places, userLocation, error, loading, refresh } = useNearbyPlaces();
 
   const openMap = (place: NearbyPlace) => {
@@ -40,11 +42,19 @@ export const BrowseScreen: React.FC = () => {
   const visiblePlaces = useMemo(() => {
     const byCategory = filter === "all" ? places : places.filter((p) => p.category === filter);
     const query = search.trim().toLowerCase();
-    if (!query) return byCategory;
-    return byCategory.filter(
-      (p) => p.name.toLowerCase().includes(query) || p.vicinity.toLowerCase().includes(query),
-    );
-  }, [places, filter, search]);
+    let filtered = byCategory;
+    if (query) {
+      filtered = byCategory.filter(
+        (p) => p.name.toLowerCase().includes(query) || p.vicinity.toLowerCase().includes(query),
+      );
+    }
+
+    if (!sortByOpenFirst) return filtered;
+
+    const open = filtered.filter((p) => p.openNow === true).sort((a, b) => a.distance - b.distance);
+    const closed = filtered.filter((p) => p.openNow !== true);
+    return [...open, ...closed];
+  }, [places, filter, search, sortByOpenFirst]);
 
   // The local filter is instant and free, so it goes first; the billed search
   // only runs at the moment it dead-ends.
@@ -78,6 +88,16 @@ export const BrowseScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.topBar}>
         <Text style={styles.topBarTitle}>Compass</Text>
+        <Pressable
+          style={[styles.sortBtn, sortByOpenFirst && styles.sortBtnActive]}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Ionicons
+            name={sortByOpenFirst ? "funnel" : "funnel-outline"}
+            size={18}
+            color={sortByOpenFirst ? colors.primary : colors.muted}
+          />
+        </Pressable>
       </View>
 
       <View style={styles.header}>
@@ -150,6 +170,40 @@ export const BrowseScreen: React.FC = () => {
         visible={mapVisible}
         onClose={() => setMapVisible(false)}
       />
+
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filters</Text>
+              <Pressable onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.headline} />
+              </Pressable>
+            </View>
+
+            <View style={styles.filterOption}>
+              <View style={styles.filterLeft}>
+                <Text style={styles.filterLabel}>Show Open First</Text>
+                <Text style={styles.filterDescription}>Sort open venues by distance</Text>
+              </View>
+              <Switch
+                value={sortByOpenFirst}
+                onValueChange={setSortByOpenFirst}
+                trackColor={{ false: colors.border, true: colors.primaryMuted }}
+                thumbColor={sortByOpenFirst ? colors.primary : colors.muted}
+              />
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -281,6 +335,7 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 12,
+    paddingBottom: 12,
   },
   topBarTitle: {
     color: colors.primary,
@@ -288,6 +343,12 @@ const useStyles = makeStyles((colors) => ({
     fontSize: 13,
     letterSpacing: 2,
     textTransform: "uppercase",
+  },
+  sortBtn: {
+    padding: 8,
+  },
+  sortBtnActive: {
+    opacity: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -562,5 +623,49 @@ const useStyles = makeStyles((colors) => ({
     textAlign: "center",
     marginTop: 40,
     fontStyle: "italic",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: colors.headline,
+    fontFamily: fonts.headlineSemi,
+    fontSize: 18,
+    letterSpacing: -0.2,
+  },
+  filterOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+  },
+  filterLeft: {
+    flex: 1,
+  },
+  filterLabel: {
+    color: colors.headline,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  filterDescription: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 12,
   },
 }));

@@ -36,7 +36,7 @@ const PAGES: Page[] = [
     icon: "people-outline",
     title: "About Us",
     body: [
-      "We're Ben and Sam — and we created This Beer Seeker App.",
+      "We're Ben, Sam and Josh — and we created This Beer Seeker App.",
       "We're massive history buffs. One fact we love was that in the Middle Ages most people couldn't read, so they navigated by landmarks instead - a sign had to be vivid enough for anyone to recognise at a glance, which is why England still has The Blue Boar, The White Hart and The King's Head.",
       "A habit the Romans started, hanging vine leaves outside a tavern to show it sold wine.",
       "That's where Beer Seeker came from. We built it as a return to true form for travelling and looking for pubs",

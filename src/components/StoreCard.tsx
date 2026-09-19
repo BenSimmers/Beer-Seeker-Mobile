@@ -36,12 +36,10 @@ export const openInMaps = async (store: LiquorStore): Promise<void> => {
   Alert.alert("No maps app found", "Install Google Maps to get directions.");
 };
 
-export const callStore = async (phone: string): Promise<void> => {
-  try {
-    await Linking.openURL(`tel:${phone}`);
-  } catch {
-    Alert.alert("Unable to place call");
-  }
+export const callStore = (phoneNumber: string): void => {
+  Linking.openURL(`tel:${phoneNumber}`).catch(() => {
+    Alert.alert("Unable to call", "Your device does not support calling.");
+  });
 };
 
 export const StoreCard: React.FC<Props> = ({ store, dimmed = false, userLocation }) => {
@@ -60,12 +58,7 @@ export const StoreCard: React.FC<Props> = ({ store, dimmed = false, userLocation
             {store.name}
           </Text>
           {store.openNow != null && (
-            <View
-              style={[
-                styles.badge,
-                store.openNow ? styles.badgeOpen : styles.badgeClosed,
-              ]}
-            >
+            <View style={[styles.badge, store.openNow ? styles.badgeOpen : styles.badgeClosed]}>
               <Text
                 style={[
                   styles.badgeText,
@@ -77,9 +70,6 @@ export const StoreCard: React.FC<Props> = ({ store, dimmed = false, userLocation
             </View>
           )}
         </View>
-        <Pressable onPress={() => callStore(store.phone!)} style={styles.phoneBtn}>
-          <Ionicons name="call-outline" size={20} color={colors.primary} />
-        </Pressable>
       </View>
 
       <Text style={styles.address} numberOfLines={2}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CategoryChips } from "../components/CategoryChips";
 import { Compass } from "../components/Compass";
@@ -34,25 +34,14 @@ export const CompassScreen: React.FC = () => {
     }
   }, [error, lastShownError, toast]);
 
-  const statusText = useMemo(() => {
-    if (!userLocation) return "Acquiring location…";
-    // if (loading) return "Loading…";
-    return null;
-  }, [userLocation, loading]);
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <LocationHeader location={userLocation} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.chipsContainer}>
-          <CategoryChips value={filter} onChange={setFilter} contentPadding={20} />
-        </View>
+      <View style={styles.chipsContainer}>
+        <CategoryChips value={filter} onChange={setFilter} contentPadding={20} scrollable />
+      </View>
 
-        {statusText && <Text style={styles.statusText}>{statusText}</Text>}
-
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.compassContainer}>
           <Compass
             needleAngle={needleAngle}
@@ -75,13 +64,7 @@ export const CompassScreen: React.FC = () => {
           </Pressable>
         )}
 
-        {store && (
-          <StoreCard store={store} dimmed={loading} userLocation={userLocation} />
-        )}
-
-        <Text style={styles.disclaimer}>
-          Locates nearby venues only · No purchases made through this app
-        </Text>
+        {store && <StoreCard store={store} dimmed={loading} userLocation={userLocation} />}
       </ScrollView>
 
       <StoreMapModal
@@ -105,7 +88,7 @@ const useStyles = makeStyles((colors) => ({
     paddingBottom: 20,
   },
   chipsContainer: {
-    marginBottom: 8,
+    marginTop: 8,
   },
   statusText: {
     color: colors.muted,

@@ -4,20 +4,29 @@ import { usePreferences } from "../preferences";
 import { ClassicCompass } from "./ClassicCompass";
 import { ModernCompass } from "./ModernCompass";
 import type { CompassProps } from "./compassShared";
+import { makeStyles } from "../theme";
 
 export { COMPASS_SIZE } from "./compassShared";
 export type { CompassProps } from "./compassShared";
 
 export const Compass: React.FC<CompassProps> = ({ onPress, ...props }) => {
   const { compassStyle } = usePreferences();
-  const compass = compassStyle === "classic" ? <ClassicCompass {...props} /> : <ModernCompass {...props} />;
+  const styles = useStyles()
+  const compass =
+    compassStyle === "classic" ? <ClassicCompass {...props} /> : <ModernCompass {...props} />;
 
-  if (!onPress)
-    return compass;
+  if (!onPress) return compass;
 
   return (
-    <Pressable onPress={onPress} style={{ alignItems: "center", justifyContent: "center" }}>
+    <Pressable onPress={onPress} style={styles.compass}>
       {compass}
     </Pressable>
   );
 };
+
+
+const useStyles = makeStyles(() => ({
+  compass: {
+    alignItems: "center", justifyContent: "center"
+  }
+}))
