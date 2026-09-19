@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 import { fonts } from "../../theme";
 
-export const useStyles = (colors: any) => {
+export const useStyles = (colors: Record<string, string>) => {
   return StyleSheet.create({
     container: {
       position: "absolute",

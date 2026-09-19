@@ -56,10 +56,7 @@ const useNavTheme = makeThemed(
 const TabIcon: React.FC<{ name: keyof typeof Ionicons.glyphMap; color: string }> = ({
   name,
   color,
-}) => {
-  const styles = useStyles();
-  return <Ionicons name={name} size={26} color={color} />;
-};
+}) => <Ionicons name={name} size={26} color={color} />;
 
 const renderCompassIcon = ({ color }: { color: string }) => (
   <TabIcon color={color} name={"compass"} />
