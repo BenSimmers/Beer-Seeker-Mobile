@@ -19,7 +19,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { AGE_VERIFIED_KEY, AgeGate } from "./src/components/AgeGate";
+import { AGE_VERIFIED_KEY, OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { ToastProvider } from "./src/components/Toast";
 import { BrowseScreen } from "./src/screens/BrowseScreen";
 import { CompassScreen } from "./src/screens/CompassScreen";
@@ -32,7 +32,6 @@ import { fonts, makeStyles, makeThemed, useTheme } from "./src/theme";
 const Tab = createBottomTabNavigator();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
-/** The Settings tab is a stack so About can be pushed on top of it. */
 const SettingsNavigator = () => (
   <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
     <SettingsStack.Screen name="SettingsHome" component={SettingsScreen} />
@@ -59,11 +58,11 @@ const TabIcon: React.FC<{ name: keyof typeof Ionicons.glyphMap; color: string }>
   color,
 }) => {
   const styles = useStyles();
-  return <Ionicons name={name} size={18} color={color} style={styles.tabIcon} />;
+  return <Ionicons name={name} size={26} color={color} />;
 };
 
 const renderCompassIcon = ({ color }: { color: string }) => (
-  <TabIcon name="compass" color={color} />
+  <TabIcon color={color} name={"compass"} />
 );
 
 const renderBrowseIcon = ({ color }: { color: string }) => <TabIcon name="menu" color={color} />;
@@ -85,6 +84,7 @@ const MainTabs = () => {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
+          tabBarShowLabel: false,
           tabBarStyle: [
             styles.tabBar,
             {
@@ -152,7 +152,7 @@ function AppRoot() {
   if (!ageVerified) {
     return (
       <SafeAreaProvider>
-        <AgeGate onVerified={() => setAgeVerified(true)} />
+        <OnboardingScreen onVerified={() => setAgeVerified(true)} />
       </SafeAreaProvider>
     );
   }
@@ -190,8 +190,5 @@ const useStyles = makeStyles((colors) => ({
     fontSize: 11,
     letterSpacing: 1,
     textTransform: "uppercase",
-  },
-  tabIcon: {
-    marginBottom: 2,
   },
 }));

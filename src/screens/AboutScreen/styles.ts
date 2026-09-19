@@ -1,0 +1,101 @@
+import { fonts, makeStyles } from "../../theme";
+
+export const useStyles = makeStyles((colors) => ({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    color: colors.primary,
+    fontFamily: fonts.label,
+    fontSize: 13,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backBtnSpacer: {
+    width: 32,
+  },
+  pager: {
+    flex: 1,
+  },
+  page: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 36,
+    paddingVertical: 20,
+  },
+  iconRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pageTitle: {
+    color: colors.headline,
+    fontFamily: fonts.headline,
+    fontSize: 24,
+    marginTop: 20,
+    textAlign: "center",
+  },
+  divider: {
+    width: 44,
+    height: 2,
+    backgroundColor: colors.border,
+    marginVertical: 18,
+  },
+  pageBody: {
+    color: colors.body,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.muted,
+    opacity: 0.4,
+  },
+  dotActive: {
+    backgroundColor: colors.primary,
+    opacity: 1,
+  },
+  footnote: {
+    color: colors.muted,
+    fontFamily: fonts.label,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    textAlign: "center",
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+}));
