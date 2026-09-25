@@ -72,7 +72,7 @@ type ToastItemProps = {
 const ToastItem: React.FC<ToastItemProps> = ({ message, onDismiss }) => {
   const { colors } = useTheme();
   const styles = useStyles(colors);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
   const dismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {

@@ -16,6 +16,7 @@ import { ErrorBanner } from "../components/common";
 import { StoreMapModal } from "../components/StoreMapModal";
 import { VenueCard } from "../components/VenueCard";
 import { SearchStatus } from "../components/SearchStatus";
+import { favouritesFirst, useFavourites } from "../favourites";
 import { useNearbyPlaces } from "../hooks/useNearbyPlaces";
 import { useTextSearch } from "../hooks/useTextSearch";
 import type { CategoryFilter, NearbyPlace } from "../types";
@@ -30,8 +31,9 @@ export const BrowseScreen: React.FC = () => {
   const [selected, setSelected] = useState<NearbyPlace | null>(null);
   const [mapVisible, setMapVisible] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [sortByOpenFirst, setSortByOpenFirst] = useState(false);
+  const [sortByOpenFirst, setSortByOpenFirst] = useState(true);
   const { places, userLocation, error, loading, refresh } = useNearbyPlaces();
+  const { favouriteKeys, isFavourite, toggleFavourite } = useFavourites();
 
   const openMap = (place: NearbyPlace) => {
     setSelected(place);
@@ -57,12 +59,19 @@ export const BrowseScreen: React.FC = () => {
       );
     }
 
-    if (!sortByOpenFirst) return filtered;
+    let ordered = filtered;
+    if (sortByOpenFirst) {
+      const open = filtered
+        .filter((p) => p.openNow === true)
+        .sort((a, b) => a.distance - b.distance);
+      const closed = filtered.filter((p) => p.openNow !== true);
+      ordered = [...open, ...closed];
+    }
 
-    const open = filtered.filter((p) => p.openNow === true).sort((a, b) => a.distance - b.distance);
-    const closed = filtered.filter((p) => p.openNow !== true);
-    return [...open, ...closed];
-  }, [places, filter, search, sortByOpenFirst]);
+    // A favourite is a standing instruction, so it outranks both the distance
+    // order and the open-first sort.
+    return favouritesFirst(ordered, favouriteKeys);
+  }, [places, filter, search, sortByOpenFirst, favouriteKeys]);
 
   // The local filter is instant and free, so it goes first; the billed search
   // only runs at the moment it dead-ends.
@@ -72,9 +81,6 @@ export const BrowseScreen: React.FC = () => {
     loading: remoteLoading,
   } = useTextSearch(search, userLocation, visiblePlaces.length === 0);
 
-  // Category chips deliberately don't filter these: a typed query is a more
-  // specific request than a chip, and the wider search returns plenty of places
-  // Google files under no category we track.
   const sections = useMemo(() => {
     const nearbyKeys = new Set(visiblePlaces.map(placeKey));
     const further = remote.filter((p) => !nearbyKeys.has(placeKey(p)));
@@ -151,7 +157,13 @@ export const BrowseScreen: React.FC = () => {
             <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.primary} />
           }
           renderItem={({ item }) => (
-            <VenueCard place={item} userLocation={userLocation} onPress={() => openMap(item)} />
+            <VenueCard
+              place={item}
+              userLocation={userLocation}
+              favourite={isFavourite(item)}
+              onToggleFavourite={() => toggleFavourite(item)}
+              onPress={() => openMap(item)}
+            />
           )}
           // One section on its own is just "the list" — a header would be noise.
           renderSectionHeader={({ section }) =>

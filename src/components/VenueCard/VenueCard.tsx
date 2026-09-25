@@ -16,9 +16,18 @@ type Props = {
   place: NearbyPlace;
   userLocation: UserLocation | null;
   onPress: () => void;
+  /** Saved places sort to the top of the list, so the card says why. */
+  favourite?: boolean;
+  onToggleFavourite?: () => void;
 };
 
-export const VenueCard: React.FC<Props> = ({ place, userLocation, onPress }) => {
+export const VenueCard: React.FC<Props> = ({
+  place,
+  userLocation,
+  onPress,
+  favourite = false,
+  onToggleFavourite,
+}) => {
   const { colors } = useTheme();
   const styles = useStyles();
   const { phone, rating, openNow } = place;
@@ -28,7 +37,7 @@ export const VenueCard: React.FC<Props> = ({ place, userLocation, onPress }) => 
     : null;
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={[styles.card, favourite && styles.cardFavourite]} onPress={onPress}>
       <View style={styles.cardTop}>
         <View style={styles.cardMain}>
           <View style={styles.metaRow}>
@@ -85,6 +94,22 @@ export const VenueCard: React.FC<Props> = ({ place, userLocation, onPress }) => 
 
       <View style={styles.actions}>
         <View style={styles.actionsLeft}>
+          {onToggleFavourite && (
+            <Pressable
+              style={[styles.actionBtn, favourite && styles.actionBtnActive]}
+              onPress={onToggleFavourite}
+              hitSlop={6}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: favourite }}
+              accessibilityLabel={favourite ? `Unpin ${place.name}` : `Pin ${place.name}`}
+            >
+              <Ionicons
+                name={favourite ? "star" : "star-outline"}
+                size={13}
+                color={favourite ? colors.primary : colors.body}
+              />
+            </Pressable>
+          )}
           {phone && (
             <Pressable style={styles.actionBtn} onPress={() => callStore(phone)}>
               <Ionicons name="call-outline" size={13} color={colors.primary} />
@@ -110,6 +135,10 @@ const useStyles = makeStyles((colors) => ({
     borderColor: colors.border,
     marginBottom: 12,
     gap: 12,
+  },
+  cardFavourite: {
+    borderColor: colors.primary,
+    backgroundColor: colors.surfaceAlt,
   },
   cardTop: {
     flexDirection: "row",
@@ -252,6 +281,10 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 7,
+  },
+  actionBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
   actionBtnText: {
     color: colors.headline,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Animated, Dimensions } from "react-native";
 import type { LiquorStore, UserLocation } from "../types";
 import { bearingToCardinal, calculateBearing, formatDistance } from "../utils/geo";
@@ -33,9 +33,6 @@ type RosePointOptions = {
   litColor: string;
 };
 
-// One point of a compass rose: two right triangles meeting at the tip, each
-// drawn with the zero-size-box border trick, one half inked and one half lit.
-// The wrapper pivots on its own base, which sits at the centre of the rose.
 export const rosePoint = ({ deg, len, halfWidth, shadowColor, litColor }: RosePointOptions) =>
   ({
     wrap: {
@@ -71,7 +68,7 @@ export const rosePoint = ({ deg, len, halfWidth, shadowColor, litColor }: RosePo
 
 // Pulses an opacity value while loading, and parks it at 1 otherwise.
 export const useLoadingPulse = (loading: boolean): Animated.Value => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     if (!loading) {
