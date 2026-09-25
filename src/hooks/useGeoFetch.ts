@@ -25,20 +25,23 @@ export const useGeoFetch = <T>(
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const lastFetchedLocation = useRef<UserLocation | null>(null);
+  // Tagged with the fetcher that asked: a new fetcher asks a different question
+  // of the same position, so the movement guard — which only knows about
+  // distance — must not swallow its first fetch.
+  const lastFetched = useRef<{ fetcher: GeoFetcher<T>; location: UserLocation } | null>(null);
   const inFlight = useRef<AbortController | null>(null);
 
   const load = useCallback(
     async (lat: number, lng: number, force = false) => {
-      const prev = lastFetchedLocation.current;
+      const prev = lastFetched.current;
       const next = { lat, lng };
       // The position watch fires every 10 m; without this guard a walk would
       // turn into a fetch per step.
-      if (!force && prev && !hasMovedBeyondThreshold(prev, next)) {
+      if (!force && prev?.fetcher === fetcher && !hasMovedBeyondThreshold(prev.location, next)) {
         log.debug("skipping fetch — inside refetch threshold");
         return;
       }
-      lastFetchedLocation.current = next;
+      lastFetched.current = { fetcher, location: next };
 
       inFlight.current?.abort();
       const controller = new AbortController();
@@ -60,14 +63,10 @@ export const useGeoFetch = <T>(
     [fetcher, log],
   );
 
-  // A new fetcher asks a different question of the same position, so the
-  // movement guard — which only knows about distance — must not swallow its
-  // first fetch. Declared above the load effect so it runs first.
   useEffect(() => {
-    lastFetchedLocation.current = null;
-  }, [fetcher]);
-
-  useEffect(() => {
+    // Fetching is the external system this effect syncs with; the loading flag
+    // it raises is part of starting that request, not derivable state.
+    // oxlint-disable-next-line react/set-state-in-effect
     if (userLocation) load(userLocation.lat, userLocation.lng);
   }, [userLocation, load]);
 

@@ -43,13 +43,7 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
   const [collapsedHeight, setCollapsedHeight] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
-  // Until the summary has been measured we can't know the travel distance, so
-  // the sheet renders at its natural height (bounded by `available`) and stays put.
   const measured = collapsedHeight > 0;
-  // A tall summary — long name, two-line address, large accessibility text, or a
-  // short map pane — can exceed EXPANDED_RATIO of the container. Clamping to the
-  // summary height keeps `travel` non-negative so the sheet stays collapsible
-  // instead of locking open at its full natural height.
   const expandedHeight = clamp(
     Math.max(available * EXPANDED_RATIO, collapsedHeight + MIN_DETAILS_HEIGHT),
     collapsedHeight,
@@ -57,13 +51,14 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
   );
   const travel = measured ? Math.max(expandedHeight - collapsedHeight, 0) : 0;
 
-  const translateY = useRef(new Animated.Value(0)).current;
+  const [translateY] = useState(() => new Animated.Value(0));
   const expandedRef = useRef(false);
-  const dragStartRef = useRef(0);
+  useEffect(() => {
+    expandedRef.current = expanded;
+  }, [expanded]);
 
   const snapTo = useCallback(
     (toValue: number) => {
-      expandedRef.current = toValue === 0;
       setExpanded(toValue === 0);
       Animated.spring(translateY, {
         toValue,
@@ -80,23 +75,22 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
     translateY.setValue(expandedRef.current ? 0 : travel);
   }, [travel, translateY]);
 
+  // Where the sheet sat when the drag began; fixed for the whole gesture.
+  const dragStart = expanded ? 0 : travel;
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        // Capture so a drag that starts on the action buttons still moves the sheet
         onMoveShouldSetPanResponderCapture: (_, gesture) =>
           travel > 0 &&
           Math.abs(gesture.dy) > TAP_SLOP &&
           Math.abs(gesture.dy) > Math.abs(gesture.dx),
         onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          dragStartRef.current = expandedRef.current ? 0 : travel;
-        },
         onPanResponderMove: (_, gesture) => {
-          translateY.setValue(clamp(dragStartRef.current + gesture.dy, 0, travel));
+          translateY.setValue(clamp(dragStart + gesture.dy, 0, travel));
         },
         onPanResponderRelease: (_, gesture) => {
-          const released = clamp(dragStartRef.current + gesture.dy, 0, travel);
+          const released = clamp(dragStart + gesture.dy, 0, travel);
           const shouldExpand =
             gesture.vy < -FLICK_VELOCITY
               ? true
@@ -105,12 +99,12 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
                 : released < travel / 2;
           snapTo(shouldExpand ? 0 : travel);
         },
-        onPanResponderTerminate: () => snapTo(expandedRef.current ? 0 : travel),
+        onPanResponderTerminate: () => snapTo(dragStart),
       }),
-    [travel, snapTo, translateY],
+    [travel, dragStart, snapTo, translateY],
   );
 
-  const toggle = () => snapTo(expandedRef.current ? travel : 0);
+  const toggle = () => snapTo(expanded ? travel : 0);
 
   const bearing = userLocation
     ? calculateBearing(userLocation.lat, userLocation.lng, store.lat, store.lng)
@@ -120,8 +114,6 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
     <Animated.View
       style={[
         styles.sheet,
-        // maxHeight bounds the flex:1 details ScrollView on the first frame,
-        // before onLayout has reported the summary height.
         { maxHeight: available },
         measured && { height: expandedHeight },
         { transform: [{ translateY }] },
@@ -293,8 +285,6 @@ const useStyles = makeStyles((colors) => ({
     borderColor: colors.border,
     paddingHorizontal: 20,
   },
-  // Vertical padding lives here, not on the sheet: the measured height of this
-  // block is exactly what stays on screen when collapsed.
   summary: {
     paddingTop: 10,
     paddingBottom: 18,

@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DarkTheme, NavigationContainer, type Theme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -19,18 +18,29 @@ import {
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { AGE_VERIFIED_KEY, OnboardingScreen } from "./src/screens/OnboardingScreen";
+import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { ToastProvider } from "./src/components/Toast";
 import { BrowseScreen } from "./src/screens/BrowseScreen";
 import { CompassScreen } from "./src/screens/CompassScreen";
+import { FavouritesScreen } from "./src/screens/FavouritesScreen";
 import { AboutScreen } from "./src/screens/AboutScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
-import type { SettingsStackParamList } from "./src/navigation/types";
+import type { CompassStackParamList, SettingsStackParamList } from "./src/navigation/types";
+import { FavouritesProvider, useFavourites } from "./src/favourites";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
+import { ageVerifiedStore } from "./src/storage";
 import { fonts, makeStyles, makeThemed, useTheme } from "./src/theme";
 
 const Tab = createBottomTabNavigator();
+const CompassStack = createNativeStackNavigator<CompassStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+
+const CompassNavigator = () => (
+  <CompassStack.Navigator screenOptions={{ headerShown: false }}>
+    <CompassStack.Screen name="CompassHome" component={CompassScreen} />
+    <CompassStack.Screen name="Favourites" component={FavouritesScreen} />
+  </CompassStack.Navigator>
+);
 
 const SettingsNavigator = () => (
   <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
@@ -96,7 +106,7 @@ const MainTabs = () => {
       >
         <Tab.Screen
           name="Compass"
-          component={CompassScreen}
+          component={CompassNavigator}
           options={{
             tabBarIcon: renderCompassIcon,
           }}
@@ -124,6 +134,7 @@ function AppRoot() {
   const [ageVerified, setAgeVerified] = useState<boolean | null>(null);
   const styles = useStyles();
   const { hydrated } = usePreferences();
+  const { hydrated: favouritesHydrated } = useFavourites();
   const [hankenLoaded, hankenError] = useHankenGrotesk({
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
@@ -137,12 +148,10 @@ function AppRoot() {
   const fontsSettled = (hankenLoaded || !!hankenError) && (spaceLoaded || !!spaceError);
 
   useEffect(() => {
-    AsyncStorage.getItem(AGE_VERIFIED_KEY)
-      .catch(() => null)
-      .then((v) => setAgeVerified(v === "true"));
+    ageVerifiedStore.read().then(setAgeVerified);
   }, []);
 
-  if (ageVerified === null || !fontsSettled || !hydrated) {
+  if (ageVerified === null || !fontsSettled || !hydrated || !favouritesHydrated) {
     return <View style={styles.blank} />;
   }
 
@@ -167,7 +176,9 @@ function AppRoot() {
 export default function App() {
   return (
     <PreferencesProvider>
-      <AppRoot />
+      <FavouritesProvider>
+        <AppRoot />
+      </FavouritesProvider>
     </PreferencesProvider>
   );
 }

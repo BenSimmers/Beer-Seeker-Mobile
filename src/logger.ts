@@ -19,5 +19,7 @@ export const placesLogger = createLogger("places");
 export const cacheLogger = createLogger("cache");
 export const compassLogger = createLogger("compass");
 export const browseLogger = createLogger("browse");
+export const favouritesLogger = createLogger("favourites");
 export const settingsLogger = createLogger("settings");
 export const locationLogger = createLogger("location");
+export const onboardingLogger = createLogger("onboarding");

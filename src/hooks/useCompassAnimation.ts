@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing } from "react-native";
 import { shortestDelta, wrap360 } from "../utils/geo";
 
@@ -52,8 +52,8 @@ type CompassAnimation = {
  * stores — just angles in, animated values out.
  */
 export const useCompassAnimation = (bearing: number | null): CompassAnimation => {
-  const needleAngle = useRef(new Animated.Value(0)).current;
-  const dialAngle = useRef(new Animated.Value(0)).current;
+  const [needleAngle] = useState(() => new Animated.Value(0));
+  const [dialAngle] = useState(() => new Animated.Value(0));
   const headingRef = useRef(0);
   const bearingRef = useRef<number | null>(null);
   const lastNeedleRef = useRef(0);

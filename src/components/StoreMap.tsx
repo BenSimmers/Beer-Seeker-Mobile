@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { LiquorStore, UserLocation } from "../types";
 import { fonts, makeStyles, makeThemed, useTheme } from "../theme";
 import { formatDistance } from "../utils/geo";
+import { regionFor } from "../utils/mapRegion";
 import { openInMaps } from "../services/storeInteractions";
 
 type Props = {
@@ -14,17 +15,6 @@ type Props = {
   variant?: "full" | "thumbnail";
   style?: StyleProp<ViewStyle>;
 };
-
-// Padding multiplier so both the user and the store sit inside the viewport
-const REGION_PADDING = 2.5;
-const MIN_DELTA = 0.01;
-
-const regionFor = (store: LiquorStore, user: UserLocation): Region => ({
-  latitude: (store.lat + user.lat) / 2,
-  longitude: (store.lng + user.lng) / 2,
-  latitudeDelta: Math.max(Math.abs(store.lat - user.lat) * REGION_PADDING, MIN_DELTA),
-  longitudeDelta: Math.max(Math.abs(store.lng - user.lng) * REGION_PADDING, MIN_DELTA),
-});
 
 export const StoreMap: React.FC<Props> = ({
   store,
@@ -37,7 +27,7 @@ export const StoreMap: React.FC<Props> = ({
   const styles = useStyles();
   const darkMapStyle = useDarkMapStyle();
   const mapRef = useRef<MapView>(null);
-  const region = useMemo(() => regionFor(store, userLocation), [store, userLocation]);
+  const region: Region = useMemo(() => regionFor(store, userLocation), [store, userLocation]);
   const isThumbnail = variant === "thumbnail";
 
   // initialRegion is only read on mount; follow store/user updates manually

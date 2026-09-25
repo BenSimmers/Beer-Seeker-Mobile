@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useState } from "react";
 import {
   Pressable,
@@ -13,10 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import appJson from "../../../app.json";
 import { SEARCH_RADIUS_M } from "../../config";
+import { ageVerifiedStore } from "../../storage";
 import { useTheme } from "../../theme";
 import { useStyles } from "./styles";
-
-export const AGE_VERIFIED_KEY = "age_verified_v1";
 
 type Props = {
   onVerified: () => void;
@@ -91,7 +89,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onVerified }) => {
   };
 
   const confirm = async () => {
-    await AsyncStorage.setItem(AGE_VERIFIED_KEY, "true");
+    await ageVerifiedStore.write(true);
     setAgeVerified(true);
   };
 

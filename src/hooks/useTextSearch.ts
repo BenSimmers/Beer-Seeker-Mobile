@@ -10,12 +10,8 @@ const DEBOUNCE_MS = 350;
 export const MIN_QUERY_LENGTH = 3;
 
 const NO_RESULTS: NearbyPlace[] = [];
+const IDLE = { results: NO_RESULTS, error: null, loading: false } as const;
 
-/**
- * Places matching `query` at any distance, unlike the radius-bound nearby fetch.
- * Text Search is billed per call, so this stays idle until the caller says the
- * local filter has come up empty, and debounces what it does send.
- */
 export const useTextSearch = (
   query: string,
   userLocation: UserLocation | null,
@@ -37,12 +33,7 @@ export const useTextSearch = (
   const active = enabled && trimmed.length >= MIN_QUERY_LENGTH;
 
   useEffect(() => {
-    if (!active) {
-      setResults(NO_RESULTS);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+    if (!active) return;
 
     const timer = setTimeout(async () => {
       const location = locationRef.current;
@@ -75,5 +66,5 @@ export const useTextSearch = (
   // A keystroke supersedes whatever was in flight; unmounting cancels it outright.
   useEffect(() => () => inFlight.current?.abort(), []);
 
-  return { results, error, loading };
+  return active ? { results, error, loading } : IDLE;
 };
