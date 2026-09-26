@@ -1,12 +1,4 @@
-import { fonts, makeStyles, makeThemed } from "../../theme";
-
-export const useDarkMapStyle = makeThemed((colors) => [
-  { elementType: "geometry", stylers: [{ color: colors.surface }] },
-  { elementType: "labels.text.fill", stylers: [{ color: colors.body }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: colors.background }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: colors.surfaceAlt }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: colors.mapWater }] },
-]);
+import { fonts, makeStyles } from "../../theme";
 
 export const useStyles = makeStyles((colors) => ({
   mapCard: {

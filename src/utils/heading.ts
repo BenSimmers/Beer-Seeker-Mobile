@@ -47,7 +47,8 @@ export const watchFusedHeading = async (
   }
 
   const compassSub = await Location.watchHeadingAsync((h) => {
-    const absolute = h.magHeading >= 0 ? h.magHeading : (h.trueHeading ?? 0);
+    // True north to match calculateBearing. trueHeading is -1 until there's a fix.
+    const absolute = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
     if (yaw === null) {
       onHeading(absolute);
       return;

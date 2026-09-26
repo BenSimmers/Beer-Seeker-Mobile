@@ -19,15 +19,6 @@ export const useStyles = makeStyles((colors) => ({
     flex: 1,
     marginRight: 12,
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   mapWrap: {
     flex: 1,
   },

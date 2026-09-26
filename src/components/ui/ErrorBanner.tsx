@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { fonts, makeStyles } from "../theme";
+import { fonts, makeStyles } from "../../theme";
 
 type ErrorBannerProps = {
   message: string;

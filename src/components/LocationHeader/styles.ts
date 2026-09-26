@@ -21,6 +21,17 @@ export const useStyles = makeStyles((colors) => ({
     fontFamily: fonts.body,
     fontSize: 13,
   },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 12,
+    flexShrink: 1,
+    marginLeft: 12,
+  },
+  favBtn: {
+    padding: 4,
+  },
   gpsIndicator: {
     flexDirection: "row",
     alignItems: "center",

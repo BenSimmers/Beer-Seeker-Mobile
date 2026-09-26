@@ -4,11 +4,11 @@ import { watchFusedHeading } from "../utils/heading";
 import { compassLogger as log } from "../logger";
 import { useCompassAnimation } from "./useCompassAnimation";
 import { useGeoFetch } from "./useGeoFetch";
-import { useUserLocation } from "./useUserLocation";
+import { useLocation } from "../location";
 import type { StoreProvider } from "../types";
 
 export const useCompass = (storeProvider: StoreProvider) => {
-  const { userLocation, error: locationError, permissionGranted } = useUserLocation();
+  const { origin: userLocation, error: locationError, permissionGranted } = useLocation();
   const {
     data: store,
     error: fetchError,

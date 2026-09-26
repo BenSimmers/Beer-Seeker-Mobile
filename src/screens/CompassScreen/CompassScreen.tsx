@@ -1,25 +1,24 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { CategoryChips } from "../components/CategoryChips";
-import { Compass } from "../components/Compass";
-import { LocationHeader } from "../components/LocationHeader";
-import { useToast } from "../components/Toast";
-import { StoreCard } from "../components/StoreCard";
-import { StoreMap } from "../components/StoreMap";
-import { StoreMapModal } from "../components/StoreMapModal";
-import { favouriteStoreProvider } from "../favourites";
-import { useCompass } from "../hooks/useCompass";
-import { nearestPlaceProvider } from "../api/googlePlaces";
-import type { CompassStackParamList } from "../navigation/types";
-import type { CategoryFilter } from "../types";
-import { fonts, makeStyles, useTheme } from "../theme";
+import { CategoryChips } from "../../components/CategoryChips";
+import { Compass } from "../../components/Compass";
+import { LocationHeader } from "../../components/LocationHeader";
+import { useToast } from "../../components/Toast";
+import { StoreCard } from "../../components/StoreCard";
+import { StoreMap } from "../../components/StoreMap";
+import { StoreMapModal } from "../../components/StoreMapModal";
+import { favouriteStoreProvider } from "../../favourites";
+import { useCompass } from "../../hooks/useCompass";
+import { nearestPlaceProvider } from "../../api/googlePlaces";
+import type { CompassStackParamList } from "../../navigation/types";
+import type { CategoryFilter } from "../../types";
+import { PinnedPill } from "./PinnedPill";
+import { useStyles } from "./styles";
 
 export const CompassScreen: React.FC = () => {
-  const { colors } = useTheme();
   const styles = useStyles();
   const toast = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<CompassStackParamList>>();
@@ -74,22 +73,7 @@ export const CompassScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {pinned && (
-          <View style={styles.pinnedPill}>
-            <Ionicons name="star" size={13} color={colors.primary} />
-            <Text style={styles.pinnedText} numberOfLines={1}>
-              Pointing at {pinned.name}
-            </Text>
-            <Pressable
-              onPress={clearPin}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Stop pointing at this place"
-            >
-              <Ionicons name="close" size={15} color={colors.muted} />
-            </Pressable>
-          </View>
-        )}
+        {pinned && <PinnedPill name={pinned.name} onClear={clearPin} />}
 
         <View style={styles.compassContainer}>
           <Compass
@@ -125,62 +109,3 @@ export const CompassScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const useStyles = makeStyles((colors) => ({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-  },
-  chipsContainer: {
-    marginTop: 8,
-  },
-  pinnedPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "center",
-    maxWidth: "100%",
-    backgroundColor: colors.primaryMuted,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    marginBottom: 12,
-  },
-  pinnedText: {
-    color: colors.primary,
-    fontFamily: fonts.labelBold,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    flexShrink: 1,
-  },
-  statusText: {
-    color: colors.muted,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    fontStyle: "italic",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  compassContainer: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  mapThumb: {
-    width: "100%",
-    marginBottom: 12,
-  },
-  disclaimer: {
-    color: colors.muted,
-    fontFamily: fonts.label,
-    fontSize: 10,
-    textAlign: "center",
-    marginTop: 12,
-  },
-}));

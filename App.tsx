@@ -27,6 +27,7 @@ import { AboutScreen } from "./src/screens/AboutScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import type { CompassStackParamList, SettingsStackParamList } from "./src/navigation/types";
 import { FavouritesProvider, useFavourites } from "./src/favourites";
+import { LocationProvider } from "./src/location";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
 import { ageVerifiedStore } from "./src/storage";
 import { fonts, makeStyles, makeThemed, useTheme } from "./src/theme";
@@ -167,7 +168,9 @@ function AppRoot() {
     <SafeAreaProvider>
       <ToastProvider>
         <StatusBar style="light" />
-        <MainTabs />
+        <LocationProvider>
+          <MainTabs />
+        </LocationProvider>
       </ToastProvider>
     </SafeAreaProvider>
   );

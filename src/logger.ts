@@ -23,3 +23,4 @@ export const favouritesLogger = createLogger("favourites");
 export const settingsLogger = createLogger("settings");
 export const locationLogger = createLogger("location");
 export const onboardingLogger = createLogger("onboarding");
+export const travelLogger = createLogger("travel");

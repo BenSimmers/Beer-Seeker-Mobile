@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import type { LiquorStore, UserLocation } from "../../types";
 import { useTheme } from "../../theme";
+import { useStyles } from "./styles";
 import {
   formatDistance,
   formatWalkTime,
@@ -10,7 +11,6 @@ import {
   bearingToCardinal,
 } from "../../utils/geo";
 import { openInMaps } from "../../services/storeInteractions";
-import { useStyles } from "./styles";
 
 type Props = {
   store: LiquorStore;
