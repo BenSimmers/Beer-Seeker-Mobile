@@ -111,15 +111,21 @@ export const OnboardingScreen: React.FC<Props> = ({ onVerified }) => {
             </Text>
           ))}
 
-          <Pressable style={styles.confirmBtn} onPress={confirm}>
+          <Pressable style={styles.confirmBtn} onPress={confirm} accessibilityRole="button">
             <Text style={styles.confirmText}>I am of legal age — Enter</Text>
           </Pressable>
         </View>
       ) : (
         <>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>About</Text>
-            <View style={styles.dotsContainer}>
+            <Text style={styles.headerTitle} accessibilityRole="header">
+              About
+            </Text>
+            <View
+              style={styles.dotsContainer}
+              accessible
+              accessibilityLabel={`Page ${Math.max(page, 1)} of ${PAGES.length - 1}`}
+            >
               {PAGES.slice(1).map((_, i) => (
                 <View key={i} style={[styles.dot, i === page - 1 && styles.dotActive]} />
               ))}
@@ -146,7 +152,9 @@ export const OnboardingScreen: React.FC<Props> = ({ onVerified }) => {
                     <Ionicons name={p.icon} size={30} color={colors.primary} />
                   </View>
                 )}
-                <Text style={styles.pageTitle}>{p.title}</Text>
+                <Text style={styles.pageTitle} accessibilityRole="header">
+                  {p.title}
+                </Text>
                 <View style={styles.pagesDivider} />
                 {p.body.map((line) => (
                   <Text key={line} style={styles.pageBody}>
@@ -155,7 +163,11 @@ export const OnboardingScreen: React.FC<Props> = ({ onVerified }) => {
                 ))}
 
                 {idx === PAGES.length - 2 && (
-                  <Pressable style={styles.getStartedBtn} onPress={onVerified}>
+                  <Pressable
+                    style={styles.getStartedBtn}
+                    onPress={onVerified}
+                    accessibilityRole="button"
+                  >
                     <Text style={styles.getStartedText}>Get Started</Text>
                   </Pressable>
                 )}

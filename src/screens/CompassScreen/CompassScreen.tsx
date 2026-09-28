@@ -87,7 +87,13 @@ export const CompassScreen: React.FC = () => {
         </View>
 
         {store && userLocation && (
-          <Pressable onPress={() => setMapExpanded(true)} style={styles.mapThumb}>
+          <Pressable
+            onPress={() => setMapExpanded(true)}
+            style={styles.mapThumb}
+            accessibilityRole="button"
+            accessibilityLabel={`Map of ${store.name}`}
+            accessibilityHint="Opens a full-screen map with store details"
+          >
             <StoreMap
               store={store}
               userLocation={userLocation}

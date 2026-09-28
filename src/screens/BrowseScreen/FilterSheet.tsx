@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Pressable, Switch, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, makeStyles, useTheme } from "../../theme";
 
@@ -21,11 +21,24 @@ export const FilterSheet: React.FC<Props> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={styles.sheet}>
+      <View style={styles.overlay}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+        <View style={styles.sheet} accessibilityViewIsModal>
           <View style={styles.header}>
-            <Text style={styles.title}>Filters</Text>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <Text style={styles.title} accessibilityRole="header">
+              Filters
+            </Text>
+            <Pressable
+              onPress={onClose}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Ionicons name="close" size={24} color={colors.headline} />
             </Pressable>
           </View>
@@ -36,6 +49,7 @@ export const FilterSheet: React.FC<Props> = ({
               <Text style={styles.description}>Sort open venues by distance</Text>
             </View>
             <Switch
+              accessibilityLabel="Show open first"
               value={openFirst}
               onValueChange={onOpenFirstChange}
               trackColor={{ false: colors.border, true: colors.primaryMuted }}
@@ -43,7 +57,7 @@ export const FilterSheet: React.FC<Props> = ({
             />
           </View>
         </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 };

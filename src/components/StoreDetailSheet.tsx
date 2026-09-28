@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { LiquorStore, UserLocation } from "../types";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import { fonts, makeStyles, useTheme } from "../theme";
 import { bearingToCardinal, calculateBearing, formatDistance } from "../utils/geo";
 import { callStore, openInMaps } from "../services/storeInteractions";
@@ -57,9 +58,15 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
     expandedRef.current = expanded;
   }, [expanded]);
 
+  const reduceMotion = useReducedMotion();
+
   const snapTo = useCallback(
     (toValue: number) => {
       setExpanded(toValue === 0);
+      if (reduceMotion) {
+        translateY.setValue(toValue);
+        return;
+      }
       Animated.spring(translateY, {
         toValue,
         useNativeDriver: true,
@@ -67,7 +74,7 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
         bounciness: 2,
       }).start();
     },
-    [translateY],
+    [translateY, reduceMotion],
   );
 
   // Re-anchor whenever the travel distance changes (first measure, rotation)
@@ -124,11 +131,19 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
         style={styles.summary}
         onLayout={(e) => setCollapsedHeight(e.nativeEvent.layout.height)}
       >
-        <Pressable onPress={toggle} hitSlop={12} style={styles.handleTap}>
+        {/* The "Details" row below does the same job with a visible label, so
+            the drag handle is left out of the accessibility tree. */}
+        <Pressable
+          onPress={toggle}
+          hitSlop={12}
+          style={styles.handleTap}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           <View style={styles.handle} />
         </Pressable>
 
-        <View style={styles.topRow}>
+        <View style={styles.topRow} accessible>
           {store.rating != null ? (
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={14} color={colors.primary} />
@@ -159,12 +174,12 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
           )}
         </View>
 
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={2} accessibilityRole="header">
           {store.name}
         </Text>
 
         {store.vicinity ? (
-          <View style={styles.addressRow}>
+          <View style={styles.addressRow} accessible>
             <Ionicons name="location-outline" size={15} color={colors.body} />
             <Text style={styles.address} numberOfLines={2}>
               {store.vicinity}
@@ -174,18 +189,37 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
 
         <View style={styles.buttonRow}>
           {phone && (
-            <Pressable style={[styles.btn, styles.btnSecondary]} onPress={() => callStore(phone)}>
+            <Pressable
+              style={[styles.btn, styles.btnSecondary]}
+              onPress={() => callStore(phone)}
+              accessibilityRole="button"
+              accessibilityLabel="Contact"
+              accessibilityHint={`Calls ${phone}`}
+            >
               <Ionicons name="call-outline" size={16} color={colors.headline} />
               <Text style={styles.btnSecondaryText}>Contact</Text>
             </Pressable>
           )}
-          <Pressable style={[styles.btn, styles.btnPrimary]} onPress={() => openInMaps(store)}>
+          <Pressable
+            style={[styles.btn, styles.btnPrimary]}
+            onPress={() => openInMaps(store)}
+            accessibilityRole="button"
+            accessibilityLabel="Get Directions"
+            accessibilityHint="Opens your maps app"
+          >
             <Ionicons name="navigate-outline" size={16} color={colors.background} />
             <Text style={styles.btnPrimaryText}>Get Directions</Text>
           </Pressable>
         </View>
 
-        <Pressable onPress={toggle} style={styles.moreRow} hitSlop={8}>
+        <Pressable
+          onPress={toggle}
+          style={styles.moreRow}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Details"
+          accessibilityState={{ expanded }}
+        >
           <Text style={styles.moreText}>{expanded ? "Hide details" : "Details"}</Text>
           <Ionicons
             name={expanded ? "chevron-down" : "chevron-up"}
@@ -200,6 +234,10 @@ export const StoreDetailSheet: React.FC<Props> = ({ store, userLocation, contain
         contentContainerStyle={styles.detailsContent}
         scrollEnabled={expanded}
         showsVerticalScrollIndicator={false}
+        // Collapsed, these rows sit below the screen edge; keep VoiceOver from
+        // landing on things the user can't see.
+        accessibilityElementsHidden={!expanded}
+        importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}
       >
         <DetailRow icon="walk-outline" label="Distance" value={formatDistance(store.distance)} />
         {bearing != null && (
@@ -260,7 +298,7 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon, label, value, onPress }) =>
   const styles = useStyles();
 
   const body = (
-    <View style={styles.detailRow}>
+    <View style={styles.detailRow} accessible={!onPress} accessibilityLabel={`${label}, ${value}`}>
       <Ionicons name={icon} size={16} color={colors.muted} style={styles.detailIcon} />
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={[styles.detailValue, onPress && styles.detailValueLink]} numberOfLines={2}>
@@ -269,7 +307,17 @@ const DetailRow: React.FC<DetailRowProps> = ({ icon, label, value, onPress }) =>
     </View>
   );
 
-  return onPress ? <Pressable onPress={onPress}>{body}</Pressable> : body;
+  return onPress ? (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${value}`}
+    >
+      {body}
+    </Pressable>
+  ) : (
+    body
+  );
 };
 
 const useStyles = makeStyles((colors) => ({
