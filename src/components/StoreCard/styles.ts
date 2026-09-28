@@ -58,6 +58,15 @@ export const useStyles = makeStyles((colors) => ({
   badgeTextClosed: {
     color: colors.muted,
   },
+  phoneBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   address: {
     color: colors.body,
     fontFamily: fonts.body,

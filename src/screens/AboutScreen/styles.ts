@@ -13,25 +13,6 @@ export const useStyles = makeStyles((colors) => ({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  headerTitle: {
-    color: colors.primary,
-    fontFamily: fonts.label,
-    fontSize: 13,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backBtnSpacer: {
-    width: 32,
-  },
   pager: {
     flex: 1,
   },

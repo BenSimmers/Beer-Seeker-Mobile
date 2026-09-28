@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Modal, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import type { LiquorStore, UserLocation } from "../../types";
-import { useTheme } from "../../theme";
+import { useStyles } from "./styles";
 import { StoreDetailSheet } from "../StoreDetailSheet";
 import { StoreMap } from "../StoreMap";
-import { useStyles } from "./styles";
+import { RoundIconButton } from "../ui";
 
 type Props = {
   /** Null while nothing is selected; the modal stays mounted but hidden. */
@@ -18,20 +17,19 @@ type Props = {
 
 export const StoreMapModal: React.FC<Props> = ({ store, userLocation, visible, onClose }) => {
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
-  const { colors } = useTheme();
   const styles = useStyles();
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      {/* Modal renders into a separate native root on iOS, so insets from
+                the outer SafeAreaProvider don't reach it — needs its own. */}
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={1}>
               {store?.name}
             </Text>
-            <Pressable style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={16} color={colors.primary} />
-            </Pressable>
+            <RoundIconButton icon="close" onPress={onClose} accessibilityLabel="Close map" />
           </View>
           <View
             style={styles.mapWrap}

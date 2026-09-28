@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Animated, Dimensions } from "react-native";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import type { LiquorStore, UserLocation } from "../types";
-import { bearingToCardinal, calculateBearing, formatDistance } from "../utils/geo";
+import {
+  bearingToCardinal,
+  bearingToSpokenCardinal,
+  calculateBearing,
+  formatDistance,
+} from "../utils/geo";
 
 const { width } = Dimensions.get("window");
 
@@ -66,13 +72,19 @@ export const rosePoint = ({ deg, len, halfWidth, shadowColor, litColor }: RosePo
     },
   }) as const;
 
-// Pulses an opacity value while loading, and parks it at 1 otherwise.
+// Pulses an opacity value while loading, and parks it at 1 otherwise. Under
+// Reduce Motion the ring just sits there dimmed — still visibly "busy".
 export const useLoadingPulse = (loading: boolean): Animated.Value => {
   const [pulseAnim] = useState(() => new Animated.Value(1));
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!loading) {
       pulseAnim.setValue(1);
+      return;
+    }
+    if (reduceMotion) {
+      pulseAnim.setValue(0.5);
       return;
     }
     const anim = Animated.loop(
@@ -83,7 +95,7 @@ export const useLoadingPulse = (loading: boolean): Animated.Value => {
     );
     anim.start();
     return () => anim.stop();
-  }, [loading, pulseAnim]);
+  }, [loading, pulseAnim, reduceMotion]);
 
   return pulseAnim;
 };
@@ -99,3 +111,15 @@ export const useTargetLabel = (
     const bearing = calculateBearing(userLocation.lat, userLocation.lng, store.lat, store.lng);
     return `${formatDistance(store.distance)} · ${bearingToCardinal(bearing)}`;
   }, [store, userLocation]);
+
+export const compassAccessibilityLabel = (
+  store: LiquorStore | null,
+  userLocation: UserLocation | null,
+  loading: boolean,
+): string => {
+  if (loading) return "Compass, finding the nearest place";
+  if (!userLocation) return "Compass, waiting for your location";
+  if (!store) return "Compass, no place found nearby";
+  const bearing = calculateBearing(userLocation.lat, userLocation.lng, store.lat, store.lng);
+  return `Compass pointing to ${store.name}, ${formatDistance(store.distance)} ${bearingToSpokenCardinal(bearing)}`;
+};

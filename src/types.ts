@@ -76,6 +76,14 @@ export type UserLocation = {
   lng: number;
 };
 
+export type OriginSource = "device" | "travel";
+
+export type Origin = UserLocation & {
+  source: OriginSource;
+  /** Null on GPS. */
+  label: string | null;
+};
+
 export type StoreProvider = (
   userLat: number,
   userLng: number,

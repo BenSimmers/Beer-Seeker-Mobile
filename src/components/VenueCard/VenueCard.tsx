@@ -1,11 +1,12 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, type AccessibilityActionEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { NearbyPlace, UserLocation } from "../../types";
 import { CATEGORY_LABELS } from "../../types";
 import { fonts, makeStyles, useTheme } from "../../theme";
 import {
   bearingToCardinal,
+  bearingToSpokenCardinal,
   calculateBearing,
   formatDistance,
   formatWalkTime,
@@ -36,8 +37,51 @@ export const VenueCard: React.FC<Props> = ({
     ? calculateBearing(userLocation.lat, userLocation.lng, place.lat, place.lng)
     : null;
 
+  const summary = [
+    place.name,
+    favourite ? "Pinned" : null,
+    place.category !== "other" ? CATEGORY_LABELS[place.category] : null,
+    openNow == null ? null : openNow ? "Open now" : "Closed",
+    rating != null ? `Rated ${rating.toFixed(1)}` : null,
+    bearing != null
+      ? `${formatDistance(place.distance)} ${bearingToSpokenCardinal(bearing)}`
+      : formatDistance(place.distance),
+    formatWalkTime(place.distance),
+    place.vicinity,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const actions = [
+    onToggleFavourite ? { name: "favourite", label: favourite ? "Unpin" : "Pin" } : null,
+    phone ? { name: "call", label: "Call" } : null,
+    { name: "directions", label: "Directions" },
+  ].filter((a): a is { name: string; label: string } => a !== null);
+
+  const onAccessibilityAction = ({ nativeEvent }: AccessibilityActionEvent) => {
+    switch (nativeEvent.actionName) {
+      case "favourite":
+        onToggleFavourite?.();
+        break;
+      case "call":
+        if (phone) callStore(phone);
+        break;
+      case "directions":
+        openInMaps(place);
+        break;
+    }
+  };
+
   return (
-    <Pressable style={[styles.card, favourite && styles.cardFavourite]} onPress={onPress}>
+    <Pressable
+      style={[styles.card, favourite && styles.cardFavourite]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={summary}
+      accessibilityHint="Opens the map"
+      accessibilityActions={actions}
+      onAccessibilityAction={onAccessibilityAction}
+    >
       <View style={styles.cardTop}>
         <View style={styles.cardMain}>
           <View style={styles.metaRow}>
@@ -111,13 +155,23 @@ export const VenueCard: React.FC<Props> = ({
             </Pressable>
           )}
           {phone && (
-            <Pressable style={styles.actionBtn} onPress={() => callStore(phone)}>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={() => callStore(phone)}
+              accessibilityRole="button"
+              accessibilityLabel={`Call ${place.name}`}
+            >
               <Ionicons name="call-outline" size={13} color={colors.primary} />
               <Text style={styles.actionBtnText}>Call</Text>
             </Pressable>
           )}
         </View>
-        <Pressable style={styles.guideBtn} onPress={() => openInMaps(place)}>
+        <Pressable
+          style={styles.guideBtn}
+          onPress={() => openInMaps(place)}
+          accessibilityRole="button"
+          accessibilityLabel={`Directions to ${place.name}`}
+        >
           <Text style={styles.guideBtnText}>Guide</Text>
           <Ionicons name="navigate-outline" size={14} color={colors.primary} />
         </Pressable>

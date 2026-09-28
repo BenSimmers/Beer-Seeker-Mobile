@@ -3,10 +3,11 @@ import { Platform, Text, View, type StyleProp, type ViewStyle } from "react-nati
 import MapView, { Marker, type Region } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import type { LiquorStore, UserLocation } from "../../types";
-import { useTheme } from "../../theme";
+import { makeThemed, useTheme } from "../../theme";
+import { useStyles } from "./styles";
 import { formatDistance } from "../../utils/geo";
+import { regionFor } from "../../utils/mapRegion";
 import { openInMaps } from "../../services/storeInteractions";
-import { useDarkMapStyle, useStyles } from "./styles";
 
 type Props = {
   store: LiquorStore;
@@ -15,16 +16,6 @@ type Props = {
   variant?: "full" | "thumbnail";
   style?: StyleProp<ViewStyle>;
 };
-
-const REGION_PADDING = 2.5;
-const MIN_DELTA = 0.01;
-
-const regionFor = (store: LiquorStore, user: UserLocation): Region => ({
-  latitude: (store.lat + user.lat) / 2,
-  longitude: (store.lng + user.lng) / 2,
-  latitudeDelta: Math.max(Math.abs(store.lat - user.lat) * REGION_PADDING, MIN_DELTA),
-  longitudeDelta: Math.max(Math.abs(store.lng - user.lng) * REGION_PADDING, MIN_DELTA),
-});
 
 export const StoreMap: React.FC<Props> = ({
   store,
@@ -37,9 +28,10 @@ export const StoreMap: React.FC<Props> = ({
   const styles = useStyles();
   const darkMapStyle = useDarkMapStyle();
   const mapRef = useRef<MapView>(null);
-  const region = useMemo(() => regionFor(store, userLocation), [store, userLocation]);
+  const region: Region = useMemo(() => regionFor(store, userLocation), [store, userLocation]);
   const isThumbnail = variant === "thumbnail";
 
+  // initialRegion is only read on mount; follow store/user updates manually
   useEffect(() => {
     mapRef.current?.animateToRegion(region, 400);
   }, [region]);
@@ -89,3 +81,11 @@ export const StoreMap: React.FC<Props> = ({
     </View>
   );
 };
+
+const useDarkMapStyle = makeThemed((colors) => [
+  { elementType: "geometry", stylers: [{ color: colors.surface }] },
+  { elementType: "labels.text.fill", stylers: [{ color: colors.body }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: colors.background }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: colors.surfaceAlt }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: colors.mapWater }] },
+]);

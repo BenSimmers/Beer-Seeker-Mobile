@@ -3,7 +3,7 @@ import { fetchNearbyPlaces } from "../api/googlePlaces";
 import { browseLogger as log } from "../logger";
 import { haversineDistance } from "../utils/geo";
 import { useGeoFetch } from "./useGeoFetch";
-import { useUserLocation } from "./useUserLocation";
+import { useLocation } from "../location";
 import type { NearbyPlace } from "../types";
 
 // Stable identity so the `livePlaces` memo doesn't recompute on every render
@@ -11,7 +11,7 @@ import type { NearbyPlace } from "../types";
 const NO_PLACES: NearbyPlace[] = [];
 
 export const useNearbyPlaces = () => {
-  const { userLocation, error: locationError } = useUserLocation();
+  const { origin: userLocation, error: locationError } = useLocation();
   const {
     data,
     error: fetchError,

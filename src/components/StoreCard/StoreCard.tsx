@@ -3,14 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import type { LiquorStore, UserLocation } from "../../types";
 import { useTheme } from "../../theme";
+import { useStyles } from "./styles";
 import {
   formatDistance,
   formatWalkTime,
   calculateBearing,
   bearingToCardinal,
+  bearingToSpokenCardinal,
 } from "../../utils/geo";
 import { openInMaps } from "../../services/storeInteractions";
-import { useStyles } from "./styles";
 
 type Props = {
   store: LiquorStore;
@@ -58,14 +59,23 @@ export const StoreCard: React.FC<Props> = ({ store, dimmed = false, userLocation
           <Text style={styles.walkTime}>away • {formatWalkTime(store.distance)}</Text>
         </View>
         {bearing != null && (
-          <View style={styles.bearingCol}>
+          <View
+            style={styles.bearingCol}
+            accessible
+            accessibilityLabel={`Bearing ${bearingToSpokenCardinal(bearing)}`}
+          >
             <Text style={styles.bearingLabel}>Bearing:</Text>
             <Text style={styles.bearing}>{bearingToCardinal(bearing)}</Text>
           </View>
         )}
       </View>
 
-      <Pressable style={styles.mapsBtn} onPress={() => openInMaps(store)}>
+      <Pressable
+        style={styles.mapsBtn}
+        onPress={() => openInMaps(store)}
+        accessibilityRole="button"
+        accessibilityLabel="Open in Maps"
+      >
         <Ionicons name="navigate-outline" size={16} color={colors.background} />
         <Text style={styles.mapsBtnText}>OPEN IN MAPS</Text>
       </Pressable>

@@ -223,10 +223,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  // Fills the well's content box rather than restating CARD_SIZE, so the rose
-  // stays centred on the true centre and not one border-width off it.
   card: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
   },

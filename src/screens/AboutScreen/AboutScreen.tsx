@@ -1,7 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
-  Pressable,
   ScrollView,
   Text,
   View,
@@ -12,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import appJson from "../../../app.json";
+import { Eyebrow, ROUND_ICON_BUTTON_SIZE, RoundIconButton } from "../../components/ui";
 import { SEARCH_RADIUS_M } from "../../config";
 import { useTheme } from "../../theme";
 import { useStyles } from "./styles";
@@ -68,6 +68,7 @@ export const AboutScreen: React.FC = () => {
   const { colors } = useTheme();
   const styles = useStyles();
 
+  // Paged offsets are multiples of the page width, so rounding gives the index.
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     setPage(Math.round(e.nativeEvent.contentOffset.x / Math.max(width, 1)));
   };
@@ -75,16 +76,14 @@ export const AboutScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.header}>
-        <Pressable
-          style={styles.backBtn}
+        <RoundIconButton
+          icon="chevron-back"
           onPress={() => navigation.goBack()}
-          accessibilityRole="button"
           accessibilityLabel="Back to settings"
-        >
-          <Ionicons name="chevron-back" size={16} color={colors.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>About</Text>
-        <View style={styles.backBtnSpacer} />
+        />
+        <Eyebrow>About</Eyebrow>
+        {/* Balances the back button so the title stays centred. */}
+        <View style={{ width: ROUND_ICON_BUTTON_SIZE }} />
       </View>
 
       <ScrollView

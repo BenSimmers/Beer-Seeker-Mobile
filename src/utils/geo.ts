@@ -63,3 +63,17 @@ export const bearingToCardinal = (bearing: number): Cardinal => {
   const i = Math.round(normalised / 45) % CARDINALS.length;
   return CARDINALS[i] ?? CARDINALS[0];
 };
+
+const CARDINAL_NAMES: Record<Cardinal, string> = {
+  N: "north",
+  NE: "north-east",
+  E: "east",
+  SE: "south-east",
+  S: "south",
+  SW: "south-west",
+  W: "west",
+  NW: "north-west",
+};
+
+export const bearingToSpokenCardinal = (bearing: number): string =>
+  CARDINAL_NAMES[bearingToCardinal(bearing)];

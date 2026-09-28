@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import { AccessibilityInfo, Animated, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useTheme } from "../../theme";
 import { useStyles } from "./styles";
 
@@ -74,18 +75,24 @@ const ToastItem: React.FC<ToastItemProps> = ({ message, onDismiss }) => {
   const styles = useStyles(colors);
   const [fadeAnim] = useState(() => new Animated.Value(0));
   const dismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reduceMotion = useReducedMotion();
+  const fadeMs = reduceMotion ? 0 : 300;
+
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(message.text);
+  }, [message.text]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 300,
+      duration: fadeMs,
       useNativeDriver: true,
     }).start();
 
     dismissTimeoutRef.current = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 300,
+        duration: fadeMs,
         useNativeDriver: true,
       }).start(() => onDismiss());
     }, 4000);
@@ -95,7 +102,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ message, onDismiss }) => {
         clearTimeout(dismissTimeoutRef.current);
       }
     };
-  }, [fadeAnim, onDismiss]);
+  }, [fadeAnim, fadeMs, onDismiss]);
 
   const getIconName = (): keyof typeof Ionicons.glyphMap => {
     switch (message.type) {
@@ -128,20 +135,26 @@ const ToastItem: React.FC<ToastItemProps> = ({ message, onDismiss }) => {
   const handleDismiss = () => {
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 300,
+      duration: fadeMs,
       useNativeDriver: true,
     }).start(() => onDismiss());
   };
 
   return (
     <Animated.View style={[styles.toast, { borderColor: color, opacity: fadeAnim }]}>
-      <View style={styles.toastContent}>
+      <View style={styles.toastContent} accessible accessibilityRole="alert">
         <Ionicons name={getIconName()} size={20} color={color} style={styles.toastIcon} />
         <Text style={[styles.toastText, { color: colors.headline }]} numberOfLines={3}>
           {message.text}
         </Text>
       </View>
-      <Pressable onPress={handleDismiss} style={styles.closeBtn} hitSlop={12}>
+      <Pressable
+        onPress={handleDismiss}
+        style={styles.closeBtn}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      >
         <Ionicons name="close" size={18} color={color} />
       </Pressable>
     </Animated.View>

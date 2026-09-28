@@ -5,14 +5,13 @@ import type { CategoryFilter } from "../../types";
 import { useStyles } from "./styles";
 
 type Props = {
-  value: CategoryFilter;
+  value: CategoryFilter | null;
   onChange: (filter: CategoryFilter) => void;
   counts?: Partial<Record<CategoryFilter, number>>;
   contentPadding?: number;
   scrollable?: boolean;
 };
 
-/** The horizontal category picker shared by Browse and Compass. */
 export const CategoryChips: React.FC<Props> = ({
   value,
   onChange,
@@ -35,6 +34,8 @@ export const CategoryChips: React.FC<Props> = ({
           key={f}
           onPress={() => onChange(f)}
           style={[styles.chip, value === f && styles.chipActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: value === f }}
         >
           <Text style={[styles.chipText, value === f && styles.chipTextActive]} numberOfLines={1}>
             {CATEGORY_FILTER_LABELS[f]}

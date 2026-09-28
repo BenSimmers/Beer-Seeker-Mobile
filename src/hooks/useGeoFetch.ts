@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NETWORK_ERROR, errorMessage, isAbort } from "../utils/errors";
 import { hasMovedBeyondThreshold } from "../utils/geo";
-import type { UserLocation } from "../types";
+import type { Origin, UserLocation } from "../types";
 
-/** `force` bypasses both the distance guard and any cache the fetcher keeps. */
 export type GeoFetcher<T> = (
   lat: number,
   lng: number,
@@ -14,34 +13,35 @@ export type GeoFetcher<T> = (
 type Logger = { debug: (...args: unknown[]) => void };
 
 /**
- * Runs a location-keyed fetch whenever the user moves far enough to justify it,
- * cancelling any request the move superseded.
+ * Runs a location-keyed fetch whenever the user moves far enough to justify it runnin
  */
-export const useGeoFetch = <T>(
-  userLocation: UserLocation | null,
-  fetcher: GeoFetcher<T>,
-  log: Logger,
-) => {
+export const useGeoFetch = <T>(origin: Origin | null, fetcher: GeoFetcher<T>, log: Logger) => {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Tagged with the fetcher that asked: a new fetcher asks a different question
-  // of the same position, so the movement guard — which only knows about
-  // distance — must not swallow its first fetch.
-  const lastFetched = useRef<{ fetcher: GeoFetcher<T>; location: UserLocation } | null>(null);
+  const lastFetched = useRef<{
+    fetcher: GeoFetcher<T>;
+    source: Origin["source"];
+    location: UserLocation;
+  } | null>(null);
   const inFlight = useRef<AbortController | null>(null);
 
   const load = useCallback(
-    async (lat: number, lng: number, force = false) => {
+    async ({ lat, lng, source }: Origin, force = false) => {
       const prev = lastFetched.current;
       const next = { lat, lng };
       // The position watch fires every 10 m; without this guard a walk would
       // turn into a fetch per step.
-      if (!force && prev?.fetcher === fetcher && !hasMovedBeyondThreshold(prev.location, next)) {
+      if (
+        !force &&
+        prev?.fetcher === fetcher &&
+        prev.source === source &&
+        !hasMovedBeyondThreshold(prev.location, next)
+      ) {
         log.debug("skipping fetch — inside refetch threshold");
         return;
       }
-      lastFetched.current = { fetcher, location: next };
+      lastFetched.current = { fetcher, source, location: next };
 
       inFlight.current?.abort();
       const controller = new AbortController();
@@ -67,14 +67,14 @@ export const useGeoFetch = <T>(
     // Fetching is the external system this effect syncs with; the loading flag
     // it raises is part of starting that request, not derivable state.
     // oxlint-disable-next-line react/set-state-in-effect
-    if (userLocation) load(userLocation.lat, userLocation.lng);
-  }, [userLocation, load]);
+    if (origin) load(origin);
+  }, [origin, load]);
 
   useEffect(() => () => inFlight.current?.abort(), []);
 
   const refresh = useCallback(() => {
-    if (userLocation) load(userLocation.lat, userLocation.lng, true);
-  }, [userLocation, load]);
+    if (origin) load(origin, true);
+  }, [origin, load]);
 
   return { data, error, loading, refresh };
 };
