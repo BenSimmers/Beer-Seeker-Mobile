@@ -25,7 +25,9 @@ import { CompassScreen } from "./src/screens/CompassScreen";
 import { FavouritesScreen } from "./src/screens/FavouritesScreen";
 import { AboutScreen } from "./src/screens/AboutScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { SocialScreen } from "./src/screens/SocialScreen";
 import type { CompassStackParamList, SettingsStackParamList } from "./src/navigation/types";
+import { BackendProvider } from "./src/backend";
 import { FavouritesProvider, useFavourites } from "./src/favourites";
 import { LocationProvider } from "./src/location";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
@@ -75,6 +77,8 @@ const renderCompassIcon = ({ color }: { color: string }) => (
 
 const renderBrowseIcon = ({ color }: { color: string }) => <TabIcon name="menu" color={color} />;
 
+const renderSocialIcon = ({ color }: { color: string }) => <TabIcon name="people" color={color} />;
+
 const renderSettingsIcon = ({ color }: { color: string }) => (
   <TabIcon name="settings-sharp" color={color} />
 );
@@ -117,6 +121,13 @@ const MainTabs = () => {
           component={BrowseScreen}
           options={{
             tabBarIcon: renderBrowseIcon,
+          }}
+        />
+        <Tab.Screen
+          name="Friends"
+          component={SocialScreen}
+          options={{
+            tabBarIcon: renderSocialIcon,
           }}
         />
         <Tab.Screen
@@ -178,11 +189,13 @@ function AppRoot() {
 
 export default function App() {
   return (
-    <PreferencesProvider>
-      <FavouritesProvider>
-        <AppRoot />
-      </FavouritesProvider>
-    </PreferencesProvider>
+    <BackendProvider>
+      <PreferencesProvider>
+        <FavouritesProvider>
+          <AppRoot />
+        </FavouritesProvider>
+      </PreferencesProvider>
+    </BackendProvider>
   );
 }
 

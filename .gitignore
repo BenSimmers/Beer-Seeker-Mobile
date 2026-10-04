@@ -46,3 +46,7 @@ yarn-error.*
 /ios
 /android
 /.claude
+/.agents
+AGENTS.md
+CLAUDE.md
+skills-lock.json
