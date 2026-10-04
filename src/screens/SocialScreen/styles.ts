@@ -55,11 +55,53 @@ export const useStyles = makeStyles((colors) => ({
   pageTitle: {
     marginBottom: 16,
   },
+  ownProfile: {
+    marginBottom: 16,
+  },
+  ownProfileText: {
+    flex: 1,
+  },
+  ownProfileTitle: {
+    color: colors.headline,
+    fontFamily: fonts.headlineSemi,
+    fontSize: 15,
+  },
+  ownProfileHint: {
+    color: colors.muted,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 2,
+  },
   search: {
     marginBottom: 20,
   },
   sections: {
     gap: 24,
+  },
+  sharingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  sharingBannerText: {
+    flex: 1,
+    color: colors.headline,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  sharingBannerAction: {
+    color: colors.primary,
+    fontFamily: fonts.labelBold,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   emptyText: {
     marginTop: 0,

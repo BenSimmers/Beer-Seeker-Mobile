@@ -1,3 +1,4 @@
+export { BackButton } from "./BackButton";
 export { Card } from "./Card";
 export { ErrorBanner } from "./ErrorBanner";
 export { Eyebrow } from "./Eyebrow";

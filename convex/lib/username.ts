@@ -3,6 +3,7 @@
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 20;
 export const DISPLAY_NAME_MAX = 40;
+export const BIO_MAX = 160;
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 
@@ -34,3 +35,9 @@ export const displayNameError = (displayName: string): string | null => {
   }
   return null;
 };
+
+export const normalizeBio = (raw: string): string => raw.trim().replace(/\n{3,}/g, "\n\n");
+
+/** Expects a normalized bio. Returns null when it is acceptable; empty is fine. */
+export const bioError = (bio: string): string | null =>
+  bio.length > BIO_MAX ? `Bios can be at most ${BIO_MAX} characters.` : null;

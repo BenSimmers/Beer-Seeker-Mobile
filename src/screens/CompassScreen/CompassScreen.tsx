@@ -14,7 +14,9 @@ import { favouriteStoreProvider } from "../../favourites";
 import { useCompass } from "../../hooks/useCompass";
 import { nearestPlaceProvider } from "../../api/googlePlaces";
 import type { CompassStackParamList } from "../../navigation/types";
+import { FriendTracker, type FriendTracking } from "../../sharing";
 import type { CategoryFilter } from "../../types";
+import { FriendPill } from "./FriendPill";
 import { PinnedPill } from "./PinnedPill";
 import { useStyles } from "./styles";
 
@@ -29,7 +31,16 @@ export const CompassScreen: React.FC = () => {
   // The route param *is* the pin: the Favourites screen sets it on the way back
   // here, and clearing it is what un-pins. No local copy to keep in step.
   const pinned = route.params?.target ?? null;
-  const clearPin = useCallback(() => navigation.setParams({ target: undefined }), [navigation]);
+  // Same idea for a friend sharing their location, set from the Friends tab.
+  const friend = route.params?.friend ?? null;
+  const clearPin = useCallback(
+    () => navigation.setParams({ target: undefined, friend: undefined }),
+    [navigation],
+  );
+
+  // Reported by <FriendTracker>, which is keyed by friend so a new pick starts fresh.
+  const [tracking, setTracking] = useState<FriendTracking>({ status: "loading" });
+  const liveTarget = friend ? (tracking.status === "live" ? tracking.target : null) : undefined;
 
   // A pinned place answers the question the category chips ask, so it replaces
   // the nearest-match search outright rather than filtering it.
@@ -37,8 +48,10 @@ export const CompassScreen: React.FC = () => {
     () => (pinned ? favouriteStoreProvider(pinned) : nearestPlaceProvider(filter)),
     [pinned, filter],
   );
-  const { userLocation, needleAngle, dialAngle, store, error, loading, refresh } =
-    useCompass(provider);
+  const { userLocation, needleAngle, dialAngle, store, error, loading, refresh } = useCompass(
+    provider,
+    liveTarget,
+  );
 
   const selectFilter = useCallback(
     (next: CategoryFilter) => {
@@ -49,8 +62,6 @@ export const CompassScreen: React.FC = () => {
     [clearPin],
   );
 
-  // Toast each error once per provider: switching category or pin is a fresh
-  // question, so the same message is worth showing again.
   const shownError = useRef<{ provider: typeof provider; error: string } | null>(null);
   useEffect(() => {
     if (!error) return;
@@ -65,7 +76,7 @@ export const CompassScreen: React.FC = () => {
       <LocationHeader location={userLocation} />
       <View style={styles.chipsContainer}>
         <CategoryChips
-          value={pinned ? null : filter}
+          value={pinned || friend ? null : filter}
           onChange={selectFilter}
           contentPadding={20}
           scrollable
@@ -73,6 +84,12 @@ export const CompassScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {friend && (
+          <>
+            <FriendTracker key={friend.userId} friend={friend} onChange={setTracking} />
+            <FriendPill name={friend.name} tracking={tracking} onClear={clearPin} />
+          </>
+        )}
         {pinned && <PinnedPill name={pinned.name} onClear={clearPin} />}
 
         <View style={styles.compassContainer}>
@@ -82,7 +99,7 @@ export const CompassScreen: React.FC = () => {
             store={store}
             userLocation={userLocation}
             loading={loading}
-            onPress={loading || !userLocation ? undefined : refresh}
+            onPress={loading || !userLocation || friend ? undefined : refresh}
           />
         </View>
 

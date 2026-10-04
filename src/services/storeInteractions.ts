@@ -1,7 +1,9 @@
 import { Alert, Linking, Platform } from "react-native";
 import type { LiquorStore } from "../types";
 
-const mapsUrls = (store: LiquorStore): string[] => {
+type MapsPlace = Pick<LiquorStore, "name" | "lat" | "lng">;
+
+const mapsUrls = (store: MapsPlace): string[] => {
   const coords = `${store.lat},${store.lng}`;
   const label = encodeURIComponent(store.name.replace(/[()]/g, ""));
   const web = `https://www.google.com/maps/search/?api=1&query=${coords}`;
@@ -11,7 +13,7 @@ const mapsUrls = (store: LiquorStore): string[] => {
   return [web];
 };
 
-export const openInMaps = async (store: LiquorStore): Promise<void> => {
+export const openInMaps = async (store: MapsPlace): Promise<void> => {
   for (const url of mapsUrls(store)) {
     try {
       await Linking.openURL(url);

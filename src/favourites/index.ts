@@ -7,3 +7,4 @@ export {
 } from "./places";
 export type { FavouriteInput, FavouritePlace } from "./places";
 export { FavouritesProvider, useFavourites } from "./FavouritesProvider";
+export { FavouritesSync } from "./FavouritesSync";

@@ -5,16 +5,22 @@ import { compassLogger as log } from "../logger";
 import { useCompassAnimation } from "./useCompassAnimation";
 import { useGeoFetch } from "./useGeoFetch";
 import { useLocation } from "../location";
-import type { StoreProvider } from "../types";
+import type { LiquorStore, StoreProvider } from "../types";
 
-export const useCompass = (storeProvider: StoreProvider) => {
+/**
+ * Points at whatever `storeProvider` finds near the user — or, when
+ * `liveTarget` is given, at that instead. A live target moves on its own (a
+ * friend sharing their location), so nothing is fetched while one is set;
+ * `null` means "live, but no position yet".
+ */
+export const useCompass = (storeProvider: StoreProvider, liveTarget?: LiquorStore | null) => {
   const { origin: userLocation, error: locationError, permissionGranted } = useLocation();
-  const {
-    data: store,
-    error: fetchError,
-    loading,
-    refresh,
-  } = useGeoFetch(userLocation, storeProvider, log);
+  const live = liveTarget !== undefined;
+  const fetched = useGeoFetch(live ? null : userLocation, storeProvider, log);
+  const store = live ? liveTarget : fetched.data;
+  const fetchError = live ? null : fetched.error;
+  const loading = live ? false : fetched.loading;
+  const { refresh } = fetched;
 
   // Absolute bearing to the store. Only moves when the target or our position
   // does; the heading samples do the rest.

@@ -1,7 +1,15 @@
-import { ConvexError, v } from "convex/values";
+import { ConvexError, v, type Infer } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
-import { findFollow, profileFor, requireUserId } from "./lib/session";
+import {
+  CONNECTIONS_LIMIT,
+  avatarUrlFor,
+  edgesOf,
+  findFollow,
+  profileFor,
+  requireUserId,
+} from "./lib/session";
+import { endSharingBetween } from "./lib/sharing";
 import { normalizeUsername } from "./lib/username";
 
 const SEARCH_MIN = 2;
@@ -11,26 +19,45 @@ export type Person = {
   userId: Id<"users">;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
   youFollow: boolean;
   followsYou: boolean;
+  isYou: boolean;
 };
 
+type ProfileWithAvatar = Doc<"profiles"> & { avatarUrl: string | null };
+
+const withAvatar = async (ctx: QueryCtx, profile: Doc<"profiles">): Promise<ProfileWithAvatar> => ({
+  ...profile,
+  avatarUrl: await avatarUrlFor(ctx, profile),
+});
+
 const toPerson = (
-  profile: Doc<"profiles">,
-  relation: { youFollow: boolean; followsYou: boolean },
+  profile: ProfileWithAvatar,
+  relation: { youFollow: boolean; followsYou: boolean; isYou?: boolean },
 ): Person => ({
   userId: profile.userId,
   username: profile.username,
   displayName: profile.displayName,
+  avatarUrl: profile.avatarUrl,
+  isYou: false,
   ...relation,
 });
+
+const connectionKind = v.union(
+  v.literal("friends"),
+  v.literal("following"),
+  v.literal("followers"),
+);
+
+export type ConnectionKind = Infer<typeof connectionKind>;
 
 const byName = (a: Person, b: Person) => a.displayName.localeCompare(b.displayName);
 
 /** Profiles for `ids`, in order, skipping accounts that never picked a username. */
 const profilesFor = async (ctx: QueryCtx, ids: Id<"users">[]) => {
   const profiles = await Promise.all(ids.map((id) => profileFor(ctx, id)));
-  return profiles.filter((p) => p !== null);
+  return Promise.all(profiles.filter((p) => p !== null).map((p) => withAvatar(ctx, p)));
 };
 
 export const follow = mutation({
@@ -50,6 +77,8 @@ export const unfollow = mutation({
     const me = await requireUserId(ctx);
     const edge = await findFollow(ctx, me, userId);
     if (edge) await ctx.db.delete(edge._id);
+    // Sharing is for friends only, and unfollowing ends the friendship.
+    await endSharingBetween(ctx, me, userId);
   },
 });
 
@@ -118,12 +147,37 @@ export const search = query({
         .filter((p) => p.userId !== me)
         .slice(0, SEARCH_LIMIT)
         .map(async (p) => {
-          const [out, back] = await Promise.all([
+          const [out, back, profile] = await Promise.all([
             findFollow(ctx, me, p.userId),
             findFollow(ctx, p.userId, me),
+            withAvatar(ctx, p),
           ]);
-          return toPerson(p, { youFollow: out !== null, followsYou: back !== null });
+          return toPerson(profile, { youFollow: out !== null, followsYou: back !== null });
         }),
     );
+  },
+});
+
+/**
+ * Anyone's friends, following or followers, with each person's relation to
+ * the caller. Lists are public to signed-in users, like the counts on a profile.
+ */
+export const connections = query({
+  args: { userId: v.id("users"), kind: connectionKind },
+  handler: async (ctx, { userId, kind }): Promise<Person[]> => {
+    const me = await requireUserId(ctx);
+    const edges = await edgesOf(ctx, userId);
+    const ids = [...edges[kind]].slice(0, CONNECTIONS_LIMIT);
+    const mine = userId === me ? edges : await edgesOf(ctx, me);
+    const profiles = await profilesFor(ctx, ids);
+    return profiles
+      .map((p) =>
+        toPerson(p, {
+          youFollow: mine.following.has(p.userId),
+          followsYou: mine.followers.has(p.userId),
+          isYou: p.userId === me,
+        }),
+      )
+      .sort(byName);
   },
 });

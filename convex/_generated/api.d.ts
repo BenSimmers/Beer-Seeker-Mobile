@@ -10,9 +10,13 @@
 
 import type * as account from "../account.js";
 import type * as auth from "../auth.js";
+import type * as favourites from "../favourites.js";
 import type * as http from "../http.js";
+import type * as lib_favourites from "../lib/favourites.js";
 import type * as lib_session from "../lib/session.js";
+import type * as lib_sharing from "../lib/sharing.js";
 import type * as lib_username from "../lib/username.js";
+import type * as location from "../location.js";
 import type * as profiles from "../profiles.js";
 import type * as social from "../social.js";
 
@@ -25,9 +29,13 @@ import type {
 declare const fullApi: ApiFromModules<{
   account: typeof account;
   auth: typeof auth;
+  favourites: typeof favourites;
   http: typeof http;
+  "lib/favourites": typeof lib_favourites;
   "lib/session": typeof lib_session;
+  "lib/sharing": typeof lib_sharing;
   "lib/username": typeof lib_username;
+  location: typeof location;
   profiles: typeof profiles;
   social: typeof social;
 }>;

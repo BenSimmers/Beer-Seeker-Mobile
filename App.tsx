@@ -26,23 +26,43 @@ import { FavouritesScreen } from "./src/screens/FavouritesScreen";
 import { AboutScreen } from "./src/screens/AboutScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { SocialScreen } from "./src/screens/SocialScreen";
-import type { CompassStackParamList, SettingsStackParamList } from "./src/navigation/types";
-import { BackendProvider } from "./src/backend";
-import { FavouritesProvider, useFavourites } from "./src/favourites";
+import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { ConnectionsScreen } from "./src/screens/ConnectionsScreen";
+import { EditProfileScreen } from "./src/screens/EditProfileScreen";
+import type {
+  CompassStackParamList,
+  FriendsStackParamList,
+  SettingsStackParamList,
+} from "./src/navigation/types";
+import { BackendProvider, backendConfigured } from "./src/backend";
+import { FavouritesProvider, FavouritesSync, useFavourites } from "./src/favourites";
 import { LocationProvider } from "./src/location";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
+import { LocationPublisher } from "./src/sharing";
 import { ageVerifiedStore } from "./src/storage";
 import { fonts, makeStyles, makeThemed, useTheme } from "./src/theme";
 
 const Tab = createBottomTabNavigator();
 const CompassStack = createNativeStackNavigator<CompassStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const FriendsStack = createNativeStackNavigator<FriendsStackParamList>();
 
 const CompassNavigator = () => (
   <CompassStack.Navigator screenOptions={{ headerShown: false }}>
     <CompassStack.Screen name="CompassHome" component={CompassScreen} />
     <CompassStack.Screen name="Favourites" component={FavouritesScreen} />
   </CompassStack.Navigator>
+);
+
+// Profiles and lists are only reachable from FriendsHome once signed in, and
+// they need the Convex client — so they're only ever mounted with a backend.
+const FriendsNavigator = () => (
+  <FriendsStack.Navigator screenOptions={{ headerShown: false }}>
+    <FriendsStack.Screen name="FriendsHome" component={SocialScreen} />
+    <FriendsStack.Screen name="Profile" component={ProfileScreen} />
+    <FriendsStack.Screen name="Connections" component={ConnectionsScreen} />
+    <FriendsStack.Screen name="EditProfile" component={EditProfileScreen} />
+  </FriendsStack.Navigator>
 );
 
 const SettingsNavigator = () => (
@@ -125,7 +145,7 @@ const MainTabs = () => {
         />
         <Tab.Screen
           name="Friends"
-          component={SocialScreen}
+          component={FriendsNavigator}
           options={{
             tabBarIcon: renderSocialIcon,
           }}
@@ -180,6 +200,12 @@ function AppRoot() {
       <ToastProvider>
         <StatusBar style="light" />
         <LocationProvider>
+          {backendConfigured && (
+            <>
+              <LocationPublisher />
+              <FavouritesSync />
+            </>
+          )}
           <MainTabs />
         </LocationProvider>
       </ToastProvider>

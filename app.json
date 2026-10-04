@@ -10,6 +10,14 @@
       "expo-font",
       "expo-status-bar",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app lets you choose a photo from your library for your profile.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-sensors",
         {
           "motionPermission": "This app uses device motion to keep the compass pointing the right way as you turn."
@@ -20,8 +28,8 @@
       "buildNumber": "3",
       "supportsTablet": false,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers, and to share where you are with friends you choose.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to find nearby bottle shops and liquor retailers, and to share where you are with friends you choose.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.bensimmers.liquorstore"

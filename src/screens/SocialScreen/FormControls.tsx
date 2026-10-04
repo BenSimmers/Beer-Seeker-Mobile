@@ -21,12 +21,20 @@ type FieldProps = Pick<
   | "textContentType"
   | "returnKeyType"
   | "autoCapitalize"
+  | "multiline"
+  | "maxLength"
 > & {
   label: string;
   hint?: string;
 };
 
-export const Field: React.FC<FieldProps> = ({ label, hint, autoCapitalize = "none", ...input }) => {
+export const Field: React.FC<FieldProps> = ({
+  label,
+  hint,
+  autoCapitalize = "none",
+  multiline,
+  ...input
+}) => {
   const { colors } = useTheme();
   const styles = useStyles();
 
@@ -34,7 +42,8 @@ export const Field: React.FC<FieldProps> = ({ label, hint, autoCapitalize = "non
     <View>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, multiline && styles.inputMultiline]}
+        multiline={multiline}
         placeholderTextColor={colors.muted}
         autoCorrect={false}
         autoCapitalize={autoCapitalize}
@@ -95,6 +104,13 @@ const useStyles = makeStyles((colors) => ({
     color: colors.headline,
     fontFamily: fonts.body,
     fontSize: 15,
+  },
+  inputMultiline: {
+    height: undefined,
+    minHeight: 92,
+    paddingTop: 12,
+    paddingBottom: 12,
+    textAlignVertical: "top",
   },
   hint: {
     color: colors.muted,

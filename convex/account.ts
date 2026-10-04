@@ -3,7 +3,8 @@ import { requireUserId } from "./lib/session";
 
 /**
  * Permanently removes the caller and everything tied to them: profile,
- * follows in both directions, and Convex Auth's accounts and sessions.
+ * follows and location shares in both directions, live location, favourites,
+ * profile photo, and Convex Auth's accounts and sessions.
  * App Store guideline 5.1.1(v) requires this to be reachable in-app.
  *
  * The client should call signOut afterwards to clear its stored tokens.
@@ -13,7 +14,17 @@ export const deleteAccount = mutation({
   handler: async (ctx) => {
     const userId = await requireUserId(ctx);
 
-    const [profiles, outgoing, incoming, sessions, accounts] = await Promise.all([
+    const [
+      profiles,
+      outgoing,
+      incoming,
+      sharesOut,
+      sharesIn,
+      liveLocations,
+      favourites,
+      sessions,
+      accounts,
+    ] = await Promise.all([
       ctx.db
         .query("profiles")
         .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -25,6 +36,22 @@ export const deleteAccount = mutation({
       ctx.db
         .query("follows")
         .withIndex("by_followee", (q) => q.eq("followeeId", userId))
+        .collect(),
+      ctx.db
+        .query("locationShares")
+        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+        .collect(),
+      ctx.db
+        .query("locationShares")
+        .withIndex("by_viewer", (q) => q.eq("viewerId", userId))
+        .collect(),
+      ctx.db
+        .query("liveLocations")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .collect(),
+      ctx.db
+        .query("favouritePlaces")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .collect(),
       ctx.db
         .query("authSessions")
@@ -63,8 +90,15 @@ export const deleteAccount = mutation({
       ...accounts,
       ...outgoing,
       ...incoming,
+      ...sharesOut,
+      ...sharesIn,
+      ...liveLocations,
+      ...favourites,
       ...profiles,
     ];
+    for (const profile of profiles) {
+      if (profile.avatarId) await ctx.storage.delete(profile.avatarId);
+    }
     for (const doc of doomed) await ctx.db.delete(doc._id);
     await ctx.db.delete(userId);
   },

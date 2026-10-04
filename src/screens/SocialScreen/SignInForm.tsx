@@ -25,7 +25,9 @@ export const SignInForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const submit = async () => {
-    const trimmedEmail = email.trim();
+    // Convex Auth matches emails exactly, so "Ben@…" from autofill would miss
+    // an account created as "ben@…".
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail.includes("@")) return setError("Enter your email address.");
     if (flow === "signUp" && password.length < PASSWORD_MIN) {
       return setError(`Passwords need at least ${PASSWORD_MIN} characters.`);
