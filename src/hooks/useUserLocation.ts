@@ -2,7 +2,7 @@ import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import { locationLogger as log } from "../logger";
 import { errorMessage } from "../utils/errors";
-import { requestLocationAccess, watchUserPosition } from "../utils/location";
+import { requestLocationAccess, toUserLocation, watchUserPosition } from "../utils/location";
 import type { UserLocation } from "../types";
 
 const POSITION_TIMEOUT_MS = 10_000;
@@ -50,7 +50,7 @@ export const useUserLocation = (): UserLocationState => {
         const lastKnown = await Location.getLastKnownPositionAsync();
         if (cancelled) return;
         if (lastKnown) {
-          setUserLocation({ lat: lastKnown.coords.latitude, lng: lastKnown.coords.longitude });
+          setUserLocation(toUserLocation(lastKnown));
         }
 
         // Stage 1 — fast Balanced fix, enough to trigger a first fetch
@@ -60,7 +60,7 @@ export const useUserLocation = (): UserLocationState => {
         );
         if (cancelled) return;
         if (fastLoc) {
-          setUserLocation({ lat: fastLoc.coords.latitude, lng: fastLoc.coords.longitude });
+          setUserLocation(toUserLocation(fastLoc));
         } else if (!lastKnown) {
           setError("Couldn’t get a GPS fix. Make sure location is enabled and try again.");
           return;

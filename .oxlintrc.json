@@ -18,9 +18,19 @@
     "console": "readonly",
     "process": "readonly"
   },
-  "ignorePatterns": ["node_modules/**", ".expo/**", "dist/**", "android/**", "ios/**"],
+  "ignorePatterns": [
+    "node_modules/**",
+    ".expo/**",
+    "dist/**",
+    "android/**",
+    "ios/**",
+    "convex/_generated/**",
+    ".agents/**"
+  ],
   "rules": {
     "no-console": "error",
+    // Convex's system fields on every document.
+    "no-underscore-dangle": ["error", { "allow": ["_id", "_creationTime"] }],
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "typescript/no-explicit-any": "warn",
     "react/react-in-jsx-scope": "off",

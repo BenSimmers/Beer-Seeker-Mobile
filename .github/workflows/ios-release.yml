@@ -38,6 +38,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Ship the backend first so the app never reaches users ahead of the
+      # functions it calls. The deploy key picks the production deployment.
+      - name: Deploy Convex functions
+        run: npx convex deploy
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+      # EAS builds in the cloud, so EXPO_PUBLIC_* values here never reach the
+      # bundle: EXPO_PUBLIC_CONVEX_URL and the Maps key come from the EAS
+      # "production" environment (see eas.json). This env only affects the
+      # local evaluation of app.config.js.
       - name: Build and submit iOS to App Store
         run: make ship-ios
         env:

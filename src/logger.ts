@@ -24,3 +24,5 @@ export const settingsLogger = createLogger("settings");
 export const locationLogger = createLogger("location");
 export const onboardingLogger = createLogger("onboarding");
 export const travelLogger = createLogger("travel");
+export const sharingLogger = createLogger("sharing");
+export const socialLogger = createLogger("social");

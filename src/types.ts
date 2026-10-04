@@ -74,6 +74,8 @@ export type NearbyPlace = LiquorStore & {
 export type UserLocation = {
   lat: number;
   lng: number;
+  /** Horizontal accuracy radius in metres, when the device reports one. */
+  accuracy?: number;
 };
 
 export type OriginSource = "device" | "travel";

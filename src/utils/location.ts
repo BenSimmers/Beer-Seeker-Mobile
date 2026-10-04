@@ -26,6 +26,12 @@ export const requestLocationAccess = async (): Promise<LocationAccess> => {
   return { ok: true };
 };
 
+export const toUserLocation = ({ coords }: Location.LocationObject): UserLocation => ({
+  lat: coords.latitude,
+  lng: coords.longitude,
+  ...(coords.accuracy != null && { accuracy: coords.accuracy }),
+});
+
 // Both hooks need the same thing once permission is granted: a high-accuracy
 // stream of positions, in our own shape, until the subscription is removed.
 export const watchUserPosition = (
@@ -37,5 +43,5 @@ export const watchUserPosition = (
       distanceInterval: POSITION_DISTANCE_INTERVAL_M,
       timeInterval: POSITION_TIME_INTERVAL_MS,
     },
-    (l) => onChange({ lat: l.coords.latitude, lng: l.coords.longitude }),
+    (l) => onChange(toUserLocation(l)),
   );
