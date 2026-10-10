@@ -119,7 +119,7 @@ const renderCompassIcon = ({ color }: { color: string }) => (
   <TabIcon color={color} name={"compass"} />
 );
 
-const renderBrowseIcon = ({ color }: { color: string }) => <TabIcon name="menu" color={color} />;
+const renderBrowseIcon = ({ color }: { color: string }) => <TabIcon name="beer" color={color} />;
 
 const renderSocialIcon = ({ color }: { color: string }) => <TabIcon name="people" color={color} />;
 
