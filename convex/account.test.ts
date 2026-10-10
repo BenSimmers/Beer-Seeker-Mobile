@@ -1,16 +1,9 @@
 // @vitest-environment edge-runtime
-/// <reference types="vite/client" />
-import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
+import { follow, newTest, type T } from "./test.helpers";
 import type { Id } from "./_generated/dataModel";
-import schema from "./schema";
 
-const modules = import.meta.glob("./**/*.ts");
-
-type T = ReturnType<typeof convexTest>;
-
-/** A signed-in user with a profile, as Convex Auth would leave them. */
 const makeUser = async (t: T, username: string) => {
   const ids = await t.run(async (ctx) => {
     const userId = await ctx.db.insert("users", { email: `${username}@example.com` });
@@ -57,12 +50,12 @@ const countFor = (t: T, userId: Id<"users">) =>
 
 describe("deleteAccount", () => {
   it("removes the user and everything tied to them", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const ben = await makeUser(t, "ben");
     const sam = await makeUser(t, "sam");
 
-    await ben.as.mutation(api.social.follow, { userId: sam.userId });
-    await sam.as.mutation(api.social.follow, { userId: ben.userId });
+    await follow(ben, sam);
+    await follow(sam, ben);
 
     await ben.as.mutation(api.account.deleteAccount, {});
 
@@ -82,11 +75,11 @@ describe("deleteAccount", () => {
   });
 
   it("leaves other people intact, minus the deleted friend", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const ben = await makeUser(t, "ben");
     const sam = await makeUser(t, "sam");
-    await ben.as.mutation(api.social.follow, { userId: sam.userId });
-    await sam.as.mutation(api.social.follow, { userId: ben.userId });
+    await follow(ben, sam);
+    await follow(sam, ben);
 
     await ben.as.mutation(api.account.deleteAccount, {});
 
@@ -99,7 +92,7 @@ describe("deleteAccount", () => {
   });
 
   it("stops a leftover token from acting as the deleted user", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const ben = await makeUser(t, "ben");
     await ben.as.mutation(api.account.deleteAccount, {});
 
@@ -112,29 +105,29 @@ describe("deleteAccount", () => {
 
 describe("social", () => {
   it("makes mutual follows friends", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const ben = await makeUser(t, "ben");
     const sam = await makeUser(t, "sam");
 
-    await ben.as.mutation(api.social.follow, { userId: sam.userId });
+    await follow(ben, sam);
     let network = await sam.as.query(api.social.network, {});
     expect(network.followers.map((p) => p.username)).toEqual(["ben"]);
     expect(network.friends).toEqual([]);
 
-    await sam.as.mutation(api.social.follow, { userId: ben.userId });
+    await follow(sam, ben);
     network = await sam.as.query(api.social.network, {});
     expect(network.friends.map((p) => p.username)).toEqual(["ben"]);
     expect(network.followers).toEqual([]);
   });
 
   it("rejects duplicate usernames regardless of case", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     await makeUser(t, "ben");
     await expect(makeUser(t, "BEN")).rejects.toThrow(/taken/);
   });
 
   it("refuses to act without a signed-in user", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const sam = await makeUser(t, "sam");
     await expect(t.mutation(api.social.follow, { userId: sam.userId })).rejects.toThrow(/sign in/);
   });

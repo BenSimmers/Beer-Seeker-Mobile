@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { backendConfigured } from "../../backend";
+import { ProfileButton } from "../../components/ProfileButton";
 import { Eyebrow, MutedText } from "../../components/ui";
 import { useTheme } from "../../theme";
 import { CreateProfileForm } from "./CreateProfileForm";
@@ -39,7 +40,10 @@ export const SocialScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Eyebrow style={styles.header}>Friends</Eyebrow>
+        <View style={styles.header}>
+          <Eyebrow>Friends</Eyebrow>
+          <ProfileButton />
+        </View>
         {backendConfigured ? (
           <AccountFlow />
         ) : (

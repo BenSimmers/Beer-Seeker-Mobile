@@ -1,9 +1,11 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { findBlock } from "./lib/blocks";
+import { findRequest } from "./lib/requests";
 import { listFavourites, type SharedFavourite } from "./lib/favourites";
+import { CONNECTIONS_LIMIT } from "./lib/limits";
 import {
-  CONNECTIONS_LIMIT,
   avatarUrlFor,
   currentUserId,
   edgesOf,
@@ -83,8 +85,14 @@ export type ProfileView = {
   avatarUrl: string | null;
   bio: string;
   isYou: boolean;
+  /** You blocked them: show only enough to recognise them and unblock. */
+  youBlocked: boolean;
   youFollow: boolean;
   followsYou: boolean;
+  /** You've asked to follow them. */
+  requested: boolean;
+  /** They've asked to follow you. */
+  requestedYou: boolean;
   counts: { friends: number; following: number; followers: number };
   /** True when a count hit the read cap and should show as "N+". */
   countsCapped: boolean;
@@ -94,7 +102,10 @@ export type ProfileView = {
   favourites: SharedFavourite[] | null;
 };
 
-/** Someone's profile as the caller is allowed to see it, or null if there's none. */
+/**
+ * Someone's profile as the caller is allowed to see it, or null if there's
+ * none. Someone who blocked the caller gets null too, as if they'd gone.
+ */
 export const view = query({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }): Promise<ProfileView | null> => {
@@ -103,11 +114,16 @@ export const view = query({
     if (!profile) return null;
 
     const isYou = userId === callerId;
-    const [out, back, edges] = await Promise.all([
+    const [out, back, edges, youBlocked, theyBlocked, requested, requestedYou] = await Promise.all([
       isYou ? null : findFollow(ctx, callerId, userId),
       isYou ? null : findFollow(ctx, userId, callerId),
       edgesOf(ctx, userId),
+      isYou ? null : findBlock(ctx, callerId, userId),
+      isYou ? null : findBlock(ctx, userId, callerId),
+      isYou ? null : findRequest(ctx, callerId, userId),
+      isYou ? null : findRequest(ctx, userId, callerId),
     ]);
+    if (theyBlocked) return null;
     const visible = profile.showFavourites !== false;
     const canSeeFavourites = isYou || (out !== null && back !== null && visible);
 
@@ -118,8 +134,11 @@ export const view = query({
       avatarUrl: await avatarUrlFor(ctx, profile),
       bio: profile.bio ?? "",
       isYou,
+      youBlocked: youBlocked !== null,
       youFollow: out !== null,
       followsYou: back !== null,
+      requested: requested !== null,
+      requestedYou: requestedYou !== null,
       counts: {
         friends: edges.friends.size,
         following: edges.following.size,

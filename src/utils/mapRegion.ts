@@ -1,7 +1,7 @@
 import { shortestDelta } from "./geo";
 
 /** Structurally `Region` from react-native-maps, without the native dependency. */
-export type MapRegion = {
+type MapRegion = {
   latitude: number;
   longitude: number;
   latitudeDelta: number;

@@ -1,6 +1,9 @@
+export { Avatar } from "./Avatar";
 export { BackButton } from "./BackButton";
+export { BottomSheet } from "./BottomSheet";
 export { Card } from "./Card";
 export { ErrorBanner } from "./ErrorBanner";
+export { Field, PrimaryButton } from "./FormControls";
 export { Eyebrow } from "./Eyebrow";
 export { MutedText } from "./MutedText";
 export { PageTitle } from "./PageTitle";

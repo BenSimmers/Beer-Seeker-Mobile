@@ -82,7 +82,7 @@ export const StoreMap: React.FC<Props> = ({
   );
 };
 
-const useDarkMapStyle = makeThemed((colors) => [
+export const useDarkMapStyle = makeThemed((colors) => [
   { elementType: "geometry", stylers: [{ color: colors.surface }] },
   { elementType: "labels.text.fill", stylers: [{ color: colors.body }] },
   { elementType: "labels.text.stroke", stylers: [{ color: colors.background }] },

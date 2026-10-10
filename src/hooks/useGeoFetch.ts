@@ -3,12 +3,7 @@ import { NETWORK_ERROR, errorMessage, isAbort } from "../utils/errors";
 import { hasMovedBeyondThreshold } from "../utils/geo";
 import type { Origin, UserLocation } from "../types";
 
-export type GeoFetcher<T> = (
-  lat: number,
-  lng: number,
-  signal: AbortSignal,
-  force: boolean,
-) => Promise<T>;
+type GeoFetcher<T> = (lat: number, lng: number, signal: AbortSignal, force: boolean) => Promise<T>;
 
 type Logger = { debug: (...args: unknown[]) => void };
 

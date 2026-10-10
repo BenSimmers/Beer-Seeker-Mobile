@@ -3,13 +3,16 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Eyebrow, SectionLabel } from "../../components/ui";
+import { ProfileButton } from "../../components/ProfileButton";
+import { Eyebrow } from "../../components/ui";
 import type { SettingsStackParamList } from "../../navigation/types";
 import { usePreferences, type CompassStyle } from "../../preferences";
 import { THEME_LABELS, THEME_NAMES, useTheme, type ThemeName } from "../../theme";
 import { ClassicGlyph, IconGlyph, ModernGlyph, ThemeGlyph } from "./glyphs";
 import { OptionGroup, type Option } from "./OptionGroup";
+import { PrivacySection } from "./PrivacySection";
 import { SettingRow } from "./SettingRow";
+import { SettingsPanel } from "./SettingsPanel";
 import { TravelModeSection } from "./TravelModeSection";
 import { useStyles } from "./styles";
 
@@ -39,33 +42,35 @@ export const SettingsScreen: React.FC = () => {
   const { theme, setTheme, colors } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const styles = useStyles();
+  const compassFace = COMPASS_OPTIONS.find((o) => o.value === compassStyle)?.title;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Eyebrow style={styles.header}>Settings</Eyebrow>
+        <View style={styles.header}>
+          <Eyebrow>Settings</Eyebrow>
+          <ProfileButton />
+        </View>
 
         <View style={styles.sections}>
-          <OptionGroup
-            label="Theme"
-            noun="theme"
-            options={THEME_OPTIONS}
-            value={theme}
-            onChange={setTheme}
-          />
+          <SettingsPanel title="Theme" summary={THEME_LABELS[theme].title}>
+            <OptionGroup noun="theme" options={THEME_OPTIONS} value={theme} onChange={setTheme} />
+          </SettingsPanel>
 
-          <OptionGroup
-            label="Compass Face"
-            noun="compass"
-            options={COMPASS_OPTIONS}
-            value={compassStyle}
-            onChange={setCompassStyle}
-          />
+          <SettingsPanel title="Compass Face" summary={compassFace}>
+            <OptionGroup
+              noun="compass"
+              options={COMPASS_OPTIONS}
+              value={compassStyle}
+              onChange={setCompassStyle}
+            />
+          </SettingsPanel>
 
           <TravelModeSection />
 
-          <View>
-            <SectionLabel>App</SectionLabel>
+          <PrivacySection />
+
+          <SettingsPanel title="App">
             <SettingRow
               glyph={<IconGlyph icon="information-outline" color={colors.primary} />}
               title="About"
@@ -75,7 +80,7 @@ export const SettingsScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel="About this app"
             />
-          </View>
+          </SettingsPanel>
         </View>
 
         <Text style={styles.footnote}>Saved on this device.</Text>

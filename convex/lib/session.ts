@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
+import { CONNECTIONS_LIMIT } from "./limits";
 
 /**
  * The caller's user id, or null when signed out. Also null for an access
@@ -32,9 +33,6 @@ export const profileFor = (ctx: QueryCtx, userId: Id<"users">): Promise<Doc<"pro
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .unique();
 
-/** Most follows read for one person's lists and counts; counts above it show as "N+". */
-export const CONNECTIONS_LIMIT = 500;
-
 export const edgesOf = async (ctx: QueryCtx, userId: Id<"users">) => {
   const [outgoing, incoming] = await Promise.all([
     ctx.db
@@ -50,6 +48,11 @@ export const edgesOf = async (ctx: QueryCtx, userId: Id<"users">) => {
   const followers = new Set(incoming.map((f) => f.followerId));
   const friends = new Set([...following].filter((id) => followers.has(id)));
   return { following, followers, friends };
+};
+
+export const areFriends = async (ctx: QueryCtx, a: Id<"users">, b: Id<"users">) => {
+  const [out, back] = await Promise.all([findFollow(ctx, a, b), findFollow(ctx, b, a)]);
+  return out !== null && back !== null;
 };
 
 export const findFollow = (ctx: QueryCtx, followerId: Id<"users">, followeeId: Id<"users">) =>

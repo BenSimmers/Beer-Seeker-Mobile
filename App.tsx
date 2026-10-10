@@ -29,7 +29,10 @@ import { SocialScreen } from "./src/screens/SocialScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { ConnectionsScreen } from "./src/screens/ConnectionsScreen";
 import { EditProfileScreen } from "./src/screens/EditProfileScreen";
+import { BlockedScreen } from "./src/screens/BlockedScreen";
+import { GroupScreen, PickGroupMembersScreen } from "./src/screens/GroupScreen";
 import type {
+  BrowseStackParamList,
   CompassStackParamList,
   FriendsStackParamList,
   SettingsStackParamList,
@@ -39,11 +42,13 @@ import { FavouritesProvider, FavouritesSync, useFavourites } from "./src/favouri
 import { LocationProvider } from "./src/location";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
 import { LocationPublisher } from "./src/sharing";
+import { usePendingCount } from "./src/social";
 import { ageVerifiedStore } from "./src/storage";
 import { fonts, makeStyles, makeThemed, useTheme } from "./src/theme";
 
 const Tab = createBottomTabNavigator();
 const CompassStack = createNativeStackNavigator<CompassStackParamList>();
+const BrowseStack = createNativeStackNavigator<BrowseStackParamList>();
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const FriendsStack = createNativeStackNavigator<FriendsStackParamList>();
 
@@ -51,17 +56,32 @@ const CompassNavigator = () => (
   <CompassStack.Navigator screenOptions={{ headerShown: false }}>
     <CompassStack.Screen name="CompassHome" component={CompassScreen} />
     <CompassStack.Screen name="Favourites" component={FavouritesScreen} />
+    <CompassStack.Screen name="Profile" component={ProfileScreen} />
+    <CompassStack.Screen name="Connections" component={ConnectionsScreen} />
+    <CompassStack.Screen name="EditProfile" component={EditProfileScreen} />
+    <CompassStack.Screen name="Blocked" component={BlockedScreen} />
   </CompassStack.Navigator>
 );
 
-// Profiles and lists are only reachable from FriendsHome once signed in, and
-// they need the Convex client — so they're only ever mounted with a backend.
+const BrowseNavigator = () => (
+  <BrowseStack.Navigator screenOptions={{ headerShown: false }}>
+    <BrowseStack.Screen name="BrowseHome" component={BrowseScreen} />
+    <BrowseStack.Screen name="Profile" component={ProfileScreen} />
+    <BrowseStack.Screen name="Connections" component={ConnectionsScreen} />
+    <BrowseStack.Screen name="EditProfile" component={EditProfileScreen} />
+    <BrowseStack.Screen name="Blocked" component={BlockedScreen} />
+  </BrowseStack.Navigator>
+);
+
 const FriendsNavigator = () => (
   <FriendsStack.Navigator screenOptions={{ headerShown: false }}>
     <FriendsStack.Screen name="FriendsHome" component={SocialScreen} />
+    <FriendsStack.Screen name="Group" component={GroupScreen} />
+    <FriendsStack.Screen name="PickGroupMembers" component={PickGroupMembersScreen} />
     <FriendsStack.Screen name="Profile" component={ProfileScreen} />
     <FriendsStack.Screen name="Connections" component={ConnectionsScreen} />
     <FriendsStack.Screen name="EditProfile" component={EditProfileScreen} />
+    <FriendsStack.Screen name="Blocked" component={BlockedScreen} />
   </FriendsStack.Navigator>
 );
 
@@ -69,6 +89,10 @@ const SettingsNavigator = () => (
   <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
     <SettingsStack.Screen name="SettingsHome" component={SettingsScreen} />
     <SettingsStack.Screen name="About" component={AboutScreen} />
+    <SettingsStack.Screen name="Profile" component={ProfileScreen} />
+    <SettingsStack.Screen name="Connections" component={ConnectionsScreen} />
+    <SettingsStack.Screen name="EditProfile" component={EditProfileScreen} />
+    <SettingsStack.Screen name="Blocked" component={BlockedScreen} />
   </SettingsStack.Navigator>
 );
 
@@ -110,6 +134,7 @@ const MainTabs = () => {
   const { colors } = useTheme();
   const styles = useStyles();
   const navTheme = useNavTheme();
+  const pending = usePendingCount();
 
   return (
     <NavigationContainer theme={navTheme}>
@@ -138,7 +163,7 @@ const MainTabs = () => {
         />
         <Tab.Screen
           name="Browse"
-          component={BrowseScreen}
+          component={BrowseNavigator}
           options={{
             tabBarIcon: renderBrowseIcon,
           }}
@@ -148,6 +173,8 @@ const MainTabs = () => {
           component={FriendsNavigator}
           options={{
             tabBarIcon: renderSocialIcon,
+            tabBarBadge: pending > 0 ? (pending > 99 ? "99+" : pending) : undefined,
+            tabBarBadgeStyle: styles.tabBarBadge,
           }}
         />
         <Tab.Screen
@@ -234,6 +261,12 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.background,
     borderTopColor: colors.border,
     paddingTop: 6,
+  },
+  tabBarBadge: {
+    backgroundColor: colors.danger,
+    color: colors.background,
+    fontFamily: fonts.labelBold,
+    fontSize: 11,
   },
   tabBarLabel: {
     fontFamily: fonts.label,

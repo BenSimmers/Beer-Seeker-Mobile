@@ -13,11 +13,16 @@ import {
   normalizeDisplayName,
 } from "../../../convex/lib/username";
 import { errorMessage } from "../../backend";
-import { BackButton, ErrorBanner, PageTitle } from "../../components/ui";
+import {
+  Avatar,
+  BackButton,
+  ErrorBanner,
+  Field,
+  PageTitle,
+  PrimaryButton,
+} from "../../components/ui";
 import { useToast } from "../../components/Toast";
 import { useTheme } from "../../theme";
-import { Avatar } from "../SocialScreen/Avatar";
-import { Field, PrimaryButton } from "../SocialScreen/FormControls";
 import { useStyles } from "./styles";
 import { useAvatarUpload } from "./useAvatarUpload";
 

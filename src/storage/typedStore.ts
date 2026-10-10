@@ -13,7 +13,7 @@ type StoreSpec<T> = {
   log: Log;
 };
 
-export type TypedStore<T> = {
+type TypedStore<T> = {
   read: () => Promise<T>;
   write: (value: T) => Promise<void>;
   clear: () => Promise<void>;

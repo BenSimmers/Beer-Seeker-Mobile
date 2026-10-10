@@ -3,6 +3,7 @@ import { Pressable, RefreshControl, SectionList, Text, View } from "react-native
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CategoryChips } from "../../components/CategoryChips";
+import { ProfileButton } from "../../components/ProfileButton";
 import { SearchStatus } from "../../components/SearchStatus";
 import { StoreMapModal } from "../../components/StoreMapModal";
 import { TravelToggle } from "../../components/TravelToggle";
@@ -92,6 +93,7 @@ export const BrowseScreen: React.FC = () => {
               color={openFirst ? colors.primary : colors.muted}
             />
           </Pressable>
+          <ProfileButton />
         </View>
       </View>
 
