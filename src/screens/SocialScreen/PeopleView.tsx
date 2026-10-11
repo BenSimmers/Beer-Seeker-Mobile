@@ -8,14 +8,14 @@ import type { Doc } from "../../../convex/_generated/dataModel";
 import type { Person } from "../../../convex/social";
 import { errorMessage } from "../../backend";
 import { useToast } from "../../components/Toast";
-import { Card, MutedText, PageTitle, SearchField, SectionLabel } from "../../components/ui";
+import { MutedText, PageTitle, SearchField, SectionLabel } from "../../components/ui";
 import { useTheme } from "../../theme";
-import { Avatar } from "./Avatar";
 import { DeleteAccountButton } from "./DeleteAccountButton";
-import { LocationControls } from "./LocationControls";
-import { PersonRow } from "./PersonRow";
+import { FriendsMap } from "./FriendsMap";
+import { Inbox } from "./Inbox";
+import { PersonRow } from "../../social";
 import { useStyles } from "./styles";
-import { useOpenProfile } from "./useOpenProfile";
+import { useOpenProfile } from "../../navigation/useOpenProfile";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -32,11 +32,9 @@ type SectionProps = {
   label: string;
   people: Person[];
   empty: string;
-  /** Friends get location sharing controls; it's limited to mutual follows. */
-  friends?: boolean;
 };
 
-const PeopleSection: React.FC<SectionProps> = ({ label, people, empty, friends = false }) => {
+const PeopleSection: React.FC<SectionProps> = ({ label, people, empty }) => {
   const styles = useStyles();
   const openProfile = useOpenProfile();
   return (
@@ -49,9 +47,7 @@ const PeopleSection: React.FC<SectionProps> = ({ label, people, empty, friends =
         <MutedText style={styles.emptyText}>{empty}</MutedText>
       ) : (
         people.map((p) => (
-          <PersonRow key={p.userId} person={p} onPress={() => openProfile(p.userId)}>
-            {friends && <LocationControls person={p} />}
-          </PersonRow>
+          <PersonRow key={p.userId} person={p} onPress={() => openProfile(p.userId)} />
         ))
       )}
     </View>
@@ -59,29 +55,6 @@ const PeopleSection: React.FC<SectionProps> = ({ label, people, empty, friends =
 };
 
 type OwnProfile = Doc<"profiles"> & { avatarUrl: string | null };
-
-const OwnProfileLink: React.FC<{ profile: OwnProfile }> = ({ profile }) => {
-  const { colors } = useTheme();
-  const styles = useStyles();
-  const openProfile = useOpenProfile();
-  return (
-    <Card
-      style={styles.ownProfile}
-      onPress={() => openProfile(profile.userId)}
-      accessibilityRole="button"
-      accessibilityLabel="Your profile"
-    >
-      <Avatar name={profile.displayName} uri={profile.avatarUrl} size={44} />
-      <View style={styles.ownProfileText}>
-        <Text style={styles.ownProfileTitle}>Your profile</Text>
-        <Text style={styles.ownProfileHint} numberOfLines={1}>
-          {profile.bio ? profile.bio : "Add a photo, a bio and your favourite spots"}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-    </Card>
-  );
-};
 
 const SharingBanner: React.FC<{ count: number }> = ({ count }) => {
   const { colors } = useTheme();
@@ -149,8 +122,6 @@ export const PeopleView: React.FC<{ profile: OwnProfile }> = ({ profile }) => {
         accessory={signOutButton}
       />
 
-      <OwnProfileLink profile={profile} />
-
       <SearchField
         style={styles.search}
         value={query}
@@ -178,12 +149,19 @@ export const PeopleView: React.FC<{ profile: OwnProfile }> = ({ profile }) => {
         <MutedText style={styles.emptyText}>Loading…</MutedText>
       ) : (
         <View style={styles.sections}>
-          <PeopleSection
-            label="Friends"
-            people={network.friends}
-            empty="When you and someone follow each other, you're friends."
-            friends
-          />
+          <Inbox />
+          <View>
+            <SectionLabel>
+              Friends{network.friends.length > 0 ? ` · ${network.friends.length}` : ""}
+            </SectionLabel>
+            {network.friends.length === 0 ? (
+              <MutedText style={styles.emptyText}>
+                When you and someone follow each other, you're friends.
+              </MutedText>
+            ) : (
+              <FriendsMap friends={network.friends} />
+            )}
+          </View>
           <PeopleSection
             label="Following"
             people={network.following}

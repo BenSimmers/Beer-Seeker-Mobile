@@ -12,10 +12,15 @@ export const useStyles = makeStyles((colors) => ({
     paddingBottom: 24,
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    // The profile button's height, so signing in doesn't shift the page.
+    minHeight: 32,
     marginBottom: 24,
   },
   sections: {
-    gap: 28,
+    gap: 12,
   },
   footnote: {
     color: colors.muted,

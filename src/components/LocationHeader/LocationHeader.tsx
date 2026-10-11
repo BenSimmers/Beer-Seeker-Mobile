@@ -8,6 +8,7 @@ import type { CompassStackParamList } from "../../navigation/types";
 import type { Origin } from "../../types";
 import { useTheme } from "../../theme";
 import { useStyles } from "./styles";
+import { ProfileButton } from "../ProfileButton";
 import { TravelToggle } from "../TravelToggle";
 
 type Props = {
@@ -53,6 +54,7 @@ export const LocationHeader: React.FC<Props> = ({ location }) => {
             color={favourites.length > 0 ? colors.primary : colors.muted}
           />
         </Pressable>
+        <ProfileButton />
       </View>
     </View>
   );

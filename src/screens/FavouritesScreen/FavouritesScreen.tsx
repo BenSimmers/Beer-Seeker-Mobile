@@ -5,12 +5,12 @@ import React, { useCallback, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MutedText, PageTitle, SearchField, SectionLabel } from "../../components/ui";
-import { toFavourite, useFavourites, type FavouriteInput } from "../../favourites";
+import { type FavouriteInput, toFavourite, useFavourites } from "../../favourites";
+import { PlaceRow } from "../../favourites/PlaceRow";
 import { MIN_QUERY_LENGTH, useTextSearch } from "../../hooks/useTextSearch";
 import { useLocation } from "../../location";
 import type { CompassStackParamList } from "../../navigation/types";
 import { useTheme } from "../../theme";
-import { PlaceRow } from "./PlaceRow";
 import { useStyles } from "./styles";
 
 export const FavouritesScreen: React.FC = () => {
@@ -28,10 +28,7 @@ export const FavouritesScreen: React.FC = () => {
   const rows: FavouriteInput[] = searching ? results : favourites;
 
   const pointAt = useCallback(
-    (place: FavouriteInput) => {
-      // Back to the compass, with the needle's new target in hand.
-      navigation.navigate("CompassHome", { target: toFavourite(place) });
-    },
+    (place: FavouriteInput) => navigation.navigate("CompassHome", { target: toFavourite(place) }),
     [navigation],
   );
 

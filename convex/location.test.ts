@@ -1,37 +1,7 @@
 // @vitest-environment edge-runtime
-/// <reference types="vite/client" />
-import { convexTest } from "convex-test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "./_generated/api";
-import schema from "./schema";
-
-const modules = import.meta.glob("./**/*.ts");
-
-type T = ReturnType<typeof convexTest>;
-
-const HOUR = 60;
-
-const makeUser = async (t: T, username: string) => {
-  const ids = await t.run(async (ctx) => {
-    const userId = await ctx.db.insert("users", { email: `${username}@example.com` });
-    const sessionId = await ctx.db.insert("authSessions", {
-      userId,
-      expirationTime: Date.now() + 24 * 60 * 60_000,
-    });
-    return { userId, sessionId };
-  });
-  const as = t.withIdentity({ subject: `${ids.userId}|${ids.sessionId}` });
-  await as.mutation(api.profiles.create, { username, displayName: username });
-  return { ...ids, as };
-};
-
-const makeFriends = async (t: T) => {
-  const ben = await makeUser(t, "ben");
-  const sam = await makeUser(t, "sam");
-  await ben.as.mutation(api.social.follow, { userId: sam.userId });
-  await sam.as.mutation(api.social.follow, { userId: ben.userId });
-  return { ben, sam };
-};
+import { follow, HOUR, makeFriends, makeUser, newTest, type T } from "./test.helpers";
 
 const liveRows = (t: T) =>
   t.run(async (ctx) => (await ctx.db.query("liveLocations").collect()).length);
@@ -42,7 +12,7 @@ afterEach(() => {
 
 describe("location sharing", () => {
   it("shows a friend's position only after they opt in", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
 
     // Nothing is stored while Ben isn't sharing with anyone.
@@ -72,8 +42,33 @@ describe("location sharing", () => {
     expect(await ben.as.query(api.location.friendLocation, { friendId: sam.userId })).toBeNull();
   });
 
+  it("lists everyone sharing with you, with or without a fix", async () => {
+    const t = newTest();
+    const { ben, sam } = await makeFriends(t);
+    const kim = await makeUser(t, "kim");
+    await follow(kim, sam);
+    await follow(sam, kim);
+
+    expect(await sam.as.query(api.location.sharedWithMe, {})).toEqual([]);
+
+    await ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
+    await kim.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
+    await ben.as.mutation(api.location.publishLocation, { lat: -33.86, lng: 151.2 });
+
+    const shared = await sam.as.query(api.location.sharedWithMe, {});
+    expect(shared).toHaveLength(2);
+    expect(shared.find((s) => s.userId === ben.userId)?.position).toMatchObject({
+      lat: -33.86,
+      lng: 151.2,
+    });
+    expect(shared.find((s) => s.userId === kim.userId)?.position).toBeNull();
+
+    // Sharing is one-way: Ben sees nobody.
+    expect(await ben.as.query(api.location.sharedWithMe, {})).toEqual([]);
+  });
+
   it("refuses to share with someone who isn't a friend", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const ben = await makeUser(t, "ben");
     const sam = await makeUser(t, "sam");
     await ben.as.mutation(api.social.follow, { userId: sam.userId });
@@ -84,7 +79,7 @@ describe("location sharing", () => {
   });
 
   it("rejects sharing times outside the allowed range", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
     await expect(
       ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: 5 }),
@@ -95,7 +90,7 @@ describe("location sharing", () => {
   });
 
   it("forgets the stored position when sharing stops", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
     await ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
     await ben.as.mutation(api.location.publishLocation, { lat: 1, lng: 2 });
@@ -107,7 +102,7 @@ describe("location sharing", () => {
   });
 
   it("ends sharing both ways on unfollow", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
     await ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
     await sam.as.mutation(api.location.startSharing, { friendId: ben.userId, minutes: HOUR });
@@ -121,7 +116,7 @@ describe("location sharing", () => {
 
   it("expires shares on schedule, but not ones that were extended", async () => {
     vi.useFakeTimers();
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
     await ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
     await ben.as.mutation(api.location.publishLocation, { lat: 1, lng: 2 });
@@ -141,7 +136,7 @@ describe("location sharing", () => {
   });
 
   it("is cleaned up when either account is deleted", async () => {
-    const t = convexTest(schema, modules);
+    const t = newTest();
     const { ben, sam } = await makeFriends(t);
     await ben.as.mutation(api.location.startSharing, { friendId: sam.userId, minutes: HOUR });
     await sam.as.mutation(api.location.startSharing, { friendId: ben.userId, minutes: HOUR });

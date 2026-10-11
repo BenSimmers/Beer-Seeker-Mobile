@@ -6,9 +6,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { ConnectionKind } from "../../../convex/social";
 import { BackButton, MutedText, PageTitle } from "../../components/ui";
-import type { FriendsStackParamList } from "../../navigation/types";
-import { PersonRow } from "../SocialScreen/PersonRow";
-import { useOpenProfile } from "../SocialScreen/useOpenProfile";
+import type { ProfileStackParamList } from "../../navigation/types";
+import { PersonRow } from "../../social";
+import { useOpenProfile } from "../../navigation/useOpenProfile";
 import { useStyles } from "./styles";
 
 const TITLES: Record<ConnectionKind, string> = {
@@ -25,7 +25,7 @@ const EMPTY: Record<ConnectionKind, (name: string) => string> = {
 
 export const ConnectionsScreen: React.FC = () => {
   const styles = useStyles();
-  const { params } = useRoute<RouteProp<FriendsStackParamList, "Connections">>();
+  const { params } = useRoute<RouteProp<ProfileStackParamList, "Connections">>();
   const people = useQuery(api.social.connections, { userId: params.userId, kind: params.kind });
   const openProfile = useOpenProfile();
 

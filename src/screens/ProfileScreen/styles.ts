@@ -68,6 +68,9 @@ export const useStyles = makeStyles((colors) => ({
     textTransform: "uppercase",
     marginTop: 2,
   },
+  request: {
+    marginTop: 16,
+  },
   actions: {
     gap: 12,
     marginTop: 16,
@@ -97,5 +100,35 @@ export const useStyles = makeStyles((colors) => ({
     marginTop: 0,
     marginBottom: 12,
     textAlign: "left",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 24,
+    marginTop: 32,
+  },
+  footerLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+  },
+  footerLinkText: {
+    color: colors.muted,
+    fontFamily: fonts.label,
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  blocked: {
+    gap: 12,
+    marginTop: 20,
+    alignItems: "flex-start",
+  },
+  blockedText: {
+    color: colors.body,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
   },
 }));

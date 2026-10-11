@@ -17,7 +17,7 @@ const OFFSET_CORRECTION = 0.05;
 
 const RAD_TO_DEG = 180 / Math.PI;
 
-export type HeadingWatcher = { remove: () => void };
+type HeadingWatcher = { remove: () => void };
 
 /**
  * Absolute compass heading in degrees, fused from two sources: device motion

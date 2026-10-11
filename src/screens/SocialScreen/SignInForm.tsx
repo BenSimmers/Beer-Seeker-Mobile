@@ -1,8 +1,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { ErrorBanner } from "../../components/ui";
-import { Field, PrimaryButton } from "./FormControls";
+import { ErrorBanner, Field, PrimaryButton } from "../../components/ui";
 import { useStyles } from "./styles";
 
 type Flow = "signIn" | "signUp";

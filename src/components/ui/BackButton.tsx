@@ -4,7 +4,13 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { fonts, makeStyles, useTheme } from "../../theme";
 
-export const BackButton: React.FC<{ label: string }> = ({ label }) => {
+type Props = {
+  label: string;
+  /** Sits at the far right of the bar, e.g. a screen's actions menu. */
+  accessory?: React.ReactNode;
+};
+
+export const BackButton: React.FC<Props> = ({ label, accessory }) => {
   const { colors } = useTheme();
   const styles = useStyles();
   const navigation = useNavigation();
@@ -23,6 +29,7 @@ export const BackButton: React.FC<{ label: string }> = ({ label }) => {
           {label}
         </Text>
       </Pressable>
+      {accessory}
     </View>
   );
 };
@@ -31,6 +38,7 @@ const useStyles = makeStyles((colors) => ({
   bar: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,

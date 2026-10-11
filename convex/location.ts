@@ -1,15 +1,14 @@
 import { ConvexError, v } from "convex/values";
-import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { findFollow, requireUserId } from "./lib/session";
+import { areFriends, requireUserId } from "./lib/session";
 import {
   SHARES_LIMIT,
-  SHARE_MAX_MINUTES,
-  SHARE_MIN_MINUTES,
   findShare,
   forgetLocationIfUnshared,
   liveLocationFor,
+  requireShareMinutes,
+  shareUntil,
 } from "./lib/sharing";
 
 type ShareSummary = { userId: Id<"users">; expiresAt: number };
@@ -21,6 +20,11 @@ type FriendPosition = {
   updatedAt: number;
 };
 
+const toPosition = (live: Doc<"liveLocations"> | null): FriendPosition | null =>
+  live
+    ? { lat: live.lat, lng: live.lng, accuracy: live.accuracy ?? null, updatedAt: live.updatedAt }
+    : null;
+
 /**
  * Lets a friend see where you are for `minutes`. Calling it again while
  * already sharing just moves the end time.
@@ -29,27 +33,12 @@ export const startSharing = mutation({
   args: { friendId: v.id("users"), minutes: v.number() },
   handler: async (ctx, { friendId, minutes }) => {
     const me = await requireUserId(ctx);
-    if (!Number.isFinite(minutes) || minutes < SHARE_MIN_MINUTES || minutes > SHARE_MAX_MINUTES) {
-      throw new ConvexError("Pick a sharing time between 15 minutes and 24 hours.");
+    requireShareMinutes(minutes);
+    if (!(await areFriends(ctx, me, friendId))) {
+      throw new ConvexError("You can only share your location with friends.");
     }
-    const [out, back] = await Promise.all([
-      findFollow(ctx, me, friendId),
-      findFollow(ctx, friendId, me),
-    ]);
-    if (!out || !back) throw new ConvexError("You can only share your location with friends.");
-
     const expiresAt = Date.now() + minutes * 60_000;
-    const existing = await findShare(ctx, me, friendId);
-    let shareId = existing?._id;
-    if (shareId) await ctx.db.patch(shareId, { expiresAt });
-    else
-      shareId = await ctx.db.insert("locationShares", {
-        ownerId: me,
-        viewerId: friendId,
-        expiresAt,
-      });
-
-    await ctx.scheduler.runAt(expiresAt, internal.location.expireShare, { shareId, expiresAt });
+    await shareUntil(ctx, me, friendId, expiresAt);
     return expiresAt;
   },
 });
@@ -159,14 +148,33 @@ export const friendLocation = query({
     const live = await liveLocationFor(ctx, friendId);
     return {
       expiresAt: share.expiresAt,
-      position: live
-        ? {
-            lat: live.lat,
-            lng: live.lng,
-            accuracy: live.accuracy ?? null,
-            updatedAt: live.updatedAt,
-          }
-        : null,
+      position: toPosition(live),
     };
+  },
+});
+
+/**
+ * Everyone sharing with the caller, with their latest position when there is
+ * one. One subscription for the friends map instead of a query per friend.
+ */
+export const sharedWithMe = query({
+  args: {},
+  handler: async (
+    ctx,
+  ): Promise<{ userId: Id<"users">; expiresAt: number; position: FriendPosition | null }[]> => {
+    const me = await requireUserId(ctx);
+    const incoming = await ctx.db
+      .query("locationShares")
+      .withIndex("by_viewer", (q) => q.eq("viewerId", me))
+      .take(SHARES_LIMIT);
+    return Promise.all(
+      incoming.map(async (share) => {
+        return {
+          userId: share.ownerId,
+          expiresAt: share.expiresAt,
+          position: toPosition(await liveLocationFor(ctx, share.ownerId)),
+        };
+      }),
+    );
   },
 });

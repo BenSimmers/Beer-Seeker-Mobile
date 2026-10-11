@@ -7,9 +7,6 @@ import { compassAccessibilityLabel } from "../compassShared";
 import type { CompassProps } from "../compassShared";
 import { useStyles } from "./styles";
 
-export { COMPASS_SIZE } from "../compassShared";
-export type { CompassProps } from "../compassShared";
-
 export const Compass: React.FC<CompassProps> = ({ onPress, ...props }) => {
   const { compassStyle } = usePreferences();
   const styles = useStyles();

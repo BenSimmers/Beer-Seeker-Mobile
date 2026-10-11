@@ -12,9 +12,8 @@ import {
   usernameError,
 } from "../../../convex/lib/username";
 import { errorMessage } from "../../backend";
-import { ErrorBanner } from "../../components/ui";
+import { ErrorBanner, Field, PrimaryButton } from "../../components/ui";
 import { DeleteAccountButton } from "./DeleteAccountButton";
-import { Field, PrimaryButton } from "./FormControls";
 import { useStyles } from "./styles";
 
 /** Second step of sign-up: an account exists, but nobody can find it yet. */

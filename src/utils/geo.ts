@@ -56,7 +56,7 @@ export const formatWalkTime = (metres: number): string =>
 
 const CARDINALS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 
-export type Cardinal = (typeof CARDINALS)[number];
+type Cardinal = (typeof CARDINALS)[number];
 
 export const bearingToCardinal = (bearing: number): Cardinal => {
   const normalised = ((bearing % 360) + 360) % 360;

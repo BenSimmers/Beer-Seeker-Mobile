@@ -1,14 +1,11 @@
 import { ConvexError, v, type Infer } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
-import {
-  CONNECTIONS_LIMIT,
-  avatarUrlFor,
-  edgesOf,
-  findFollow,
-  profileFor,
-  requireUserId,
-} from "./lib/session";
+import { CONNECTIONS_LIMIT } from "./lib/limits";
+import { avatarUrlFor, edgesOf, findFollow, profileFor, requireUserId } from "./lib/session";
+import { findBlock, hiddenFrom } from "./lib/blocks";
+import { rowsForUser } from "./lib/groups";
+import { findRequest, incomingRequests, requestedBy } from "./lib/requests";
 import { endSharingBetween } from "./lib/sharing";
 import { normalizeUsername } from "./lib/username";
 
@@ -22,6 +19,8 @@ export type Person = {
   avatarUrl: string | null;
   youFollow: boolean;
   followsYou: boolean;
+  /** You've asked to follow them and they haven't answered. */
+  requested: boolean;
   isYou: boolean;
 };
 
@@ -34,12 +33,13 @@ const withAvatar = async (ctx: QueryCtx, profile: Doc<"profiles">): Promise<Prof
 
 const toPerson = (
   profile: ProfileWithAvatar,
-  relation: { youFollow: boolean; followsYou: boolean; isYou?: boolean },
+  relation: { youFollow: boolean; followsYou: boolean; requested?: boolean; isYou?: boolean },
 ): Person => ({
   userId: profile.userId,
   username: profile.username,
   displayName: profile.displayName,
   avatarUrl: profile.avatarUrl,
+  requested: false,
   isYou: false,
   ...relation,
 });
@@ -60,14 +60,66 @@ const profilesFor = async (ctx: QueryCtx, ids: Id<"users">[]) => {
   return Promise.all(profiles.filter((p) => p !== null).map((p) => withAvatar(ctx, p)));
 };
 
+/** Asks to follow someone. They become a follower only once they accept. */
 export const follow = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     const me = await requireUserId(ctx);
     if (me === userId) throw new ConvexError("You can't follow yourself.");
-    if (!(await profileFor(ctx, userId))) throw new ConvexError("That account doesn't exist.");
-    if (await findFollow(ctx, me, userId)) return;
-    await ctx.db.insert("follows", { followerId: me, followeeId: userId });
+    // Someone who blocked you looks like they don't exist, as on their profile.
+    if (!(await profileFor(ctx, userId)) || (await findBlock(ctx, userId, me))) {
+      throw new ConvexError("That account doesn't exist.");
+    }
+    if (await findBlock(ctx, me, userId)) throw new ConvexError("Unblock them to follow them.");
+    if ((await findFollow(ctx, me, userId)) || (await findRequest(ctx, me, userId))) return;
+    await ctx.db.insert("followRequests", {
+      requesterId: me,
+      targetId: userId,
+      requestedAt: Date.now(),
+    });
+  },
+});
+
+/** Accepts or declines someone's request to follow the caller. */
+export const respond = mutation({
+  args: { userId: v.id("users"), accept: v.boolean() },
+  handler: async (ctx, { userId, accept }) => {
+    const me = await requireUserId(ctx);
+    const request = await findRequest(ctx, userId, me);
+    if (!request) return;
+    await ctx.db.delete(request._id);
+    if (accept && !(await findFollow(ctx, userId, me))) {
+      await ctx.db.insert("follows", { followerId: userId, followeeId: me });
+    }
+  },
+});
+
+/** People asking to follow the caller, newest first. */
+export const requests = query({
+  args: {},
+  handler: async (ctx): Promise<Person[]> => {
+    const me = await requireUserId(ctx);
+    const rows = await incomingRequests(ctx, me);
+    const [profiles, mine] = await Promise.all([
+      profilesFor(
+        ctx,
+        rows.map((r) => r.requesterId),
+      ),
+      edgesOf(ctx, me),
+    ]);
+    return profiles.map((p) =>
+      toPerson(p, { youFollow: mine.following.has(p.userId), followsYou: false }),
+    );
+  },
+});
+
+/** What's waiting on the caller: follow requests plus group invites. */
+export const pendingCount = query({
+  args: {},
+  handler: async (ctx): Promise<number> => {
+    const me = await requireUserId(ctx);
+    const [asks, groups] = await Promise.all([incomingRequests(ctx, me), rowsForUser(ctx, me)]);
+    return asks.length + groups.filter((r) => r.status === "invited").length;
   },
 });
 
@@ -75,8 +127,13 @@ export const unfollow = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     const me = await requireUserId(ctx);
-    const edge = await findFollow(ctx, me, userId);
+    // Also withdraws a request that hasn't been answered.
+    const [edge, request] = await Promise.all([
+      findFollow(ctx, me, userId),
+      findRequest(ctx, me, userId),
+    ]);
     if (edge) await ctx.db.delete(edge._id);
+    if (request) await ctx.db.delete(request._id);
     // Sharing is for friends only, and unfollowing ends the friendship.
     await endSharingBetween(ctx, me, userId);
   },
@@ -104,6 +161,7 @@ export const network = query({
 
     const followingIds = new Set(outgoing.map((f) => f.followeeId));
     const followerIds = new Set(incoming.map((f) => f.followerId));
+    const requested = await requestedBy(ctx, me);
 
     const [following, followers] = await Promise.all([
       profilesFor(ctx, [...followingIds]),
@@ -123,7 +181,9 @@ export const network = query({
         .map((p) => toPerson(p, { youFollow: true, followsYou: false }))
         .sort(byName),
       followers: followers
-        .map((p) => toPerson(p, { youFollow: false, followsYou: true }))
+        .map((p) =>
+          toPerson(p, { youFollow: false, followsYou: true, requested: requested.has(p.userId) }),
+        )
         .sort(byName),
     };
   },
@@ -137,22 +197,30 @@ export const search = query({
     const cleaned = normalizeUsername(term).replace(/[^a-z0-9_]/g, "");
     if (cleaned.length < SEARCH_MIN) return [];
 
-    const matches = await ctx.db
-      .query("profiles")
-      .withSearchIndex("search_username", (q) => q.search("username", cleaned))
-      .take(SEARCH_LIMIT + 1);
+    const [matches, hidden] = await Promise.all([
+      ctx.db
+        .query("profiles")
+        .withSearchIndex("search_username", (q) => q.search("username", cleaned))
+        .take(SEARCH_LIMIT + 1),
+      hiddenFrom(ctx, me),
+    ]);
 
     return Promise.all(
       matches
-        .filter((p) => p.userId !== me)
+        .filter((p) => p.userId !== me && !hidden.has(p.userId))
         .slice(0, SEARCH_LIMIT)
         .map(async (p) => {
-          const [out, back, profile] = await Promise.all([
+          const [out, back, request, profile] = await Promise.all([
             findFollow(ctx, me, p.userId),
             findFollow(ctx, p.userId, me),
+            findRequest(ctx, me, p.userId),
             withAvatar(ctx, p),
           ]);
-          return toPerson(profile, { youFollow: out !== null, followsYou: back !== null });
+          return toPerson(profile, {
+            youFollow: out !== null,
+            followsYou: back !== null,
+            requested: request !== null,
+          });
         }),
     );
   },
@@ -167,14 +235,19 @@ export const connections = query({
   handler: async (ctx, { userId, kind }): Promise<Person[]> => {
     const me = await requireUserId(ctx);
     const edges = await edgesOf(ctx, userId);
-    const ids = [...edges[kind]].slice(0, CONNECTIONS_LIMIT);
-    const mine = userId === me ? edges : await edgesOf(ctx, me);
+    const [mine, hidden, requested] = await Promise.all([
+      userId === me ? edges : edgesOf(ctx, me),
+      hiddenFrom(ctx, me),
+      requestedBy(ctx, me),
+    ]);
+    const ids = [...edges[kind]].filter((id) => !hidden.has(id)).slice(0, CONNECTIONS_LIMIT);
     const profiles = await profilesFor(ctx, ids);
     return profiles
       .map((p) =>
         toPerson(p, {
           youFollow: mine.following.has(p.userId),
           followsYou: mine.followers.has(p.userId),
+          requested: requested.has(p.userId),
           isYou: p.userId === me,
         }),
       )

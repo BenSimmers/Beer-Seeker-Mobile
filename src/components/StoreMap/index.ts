@@ -1,1 +1,1 @@
-export { StoreMap } from "./StoreMap";
+export { StoreMap, useDarkMapStyle } from "./StoreMap";
