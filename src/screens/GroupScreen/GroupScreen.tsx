@@ -23,6 +23,7 @@ import type { FriendsStackParamList } from "../../navigation/types";
 import { useTheme } from "../../theme";
 import { DURATIONS } from "../../sharing";
 import { useOpenProfile } from "../../navigation/useOpenProfile";
+import { CrawlSection } from "./CrawlSection";
 import { useStyles } from "./styles";
 
 type Nav = NativeStackNavigationProp<FriendsStackParamList>;
@@ -177,6 +178,7 @@ export const GroupScreen: React.FC = () => {
   const group = useQuery(api.groups.get, { groupId: params.groupId });
   const leave = useMutation(api.groups.leave);
   const removeGroup = useMutation(api.groups.remove);
+  const [showPeople, setShowPeople] = useState(false);
   const { run, busy } = useAction();
 
   if (group === undefined) {
@@ -250,45 +252,64 @@ export const GroupScreen: React.FC = () => {
         subtitle={`${members} ${members === 1 ? "member" : "members"}${invited > 0 ? ` · ${invited} invited` : ""}`}
       />
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <CrawlSection group={group} />
+
+        <SectionLabel style={styles.sectionLabel}>Location sharing</SectionLabel>
         <ShareWithGroup group={group} />
+        <Pressable
+          style={styles.peopleToggle}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showPeople }}
+          onPress={() => setShowPeople((value) => !value)}
+        >
+          <Text style={styles.addButtonText}>People / Settings · {members}</Text>
+          <Ionicons
+            name={showPeople ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={colors.primary}
+          />
+        </Pressable>
+        {showPeople && (
+          <>
+            <SectionLabel style={styles.sectionLabel}>People</SectionLabel>
+            {group.members.map((m) => (
+              <MemberRow key={m.userId} group={group} member={m} />
+            ))}
+            {group.youOwn && (
+              <Pressable
+                style={styles.addButton}
+                onPress={() => navigation.push("PickGroupMembers", { groupId: group.groupId })}
+                accessibilityRole="button"
+              >
+                <Ionicons name="person-add-outline" size={16} color={colors.primary} />
+                <Text style={styles.addButtonText}>Add friends</Text>
+              </Pressable>
+            )}
 
-        <SectionLabel style={styles.sectionLabel}>People</SectionLabel>
-        {group.members.map((m) => (
-          <MemberRow key={m.userId} group={group} member={m} />
-        ))}
-        {group.youOwn && (
-          <Pressable
-            style={styles.addButton}
-            onPress={() => navigation.push("PickGroupMembers", { groupId: group.groupId })}
-            accessibilityRole="button"
-          >
-            <Ionicons name="person-add-outline" size={16} color={colors.primary} />
-            <Text style={styles.addButtonText}>Add friends</Text>
-          </Pressable>
+            {group.youOwn && <RenameGroup key={group.name} group={group} />}
+
+            <View style={styles.footer}>
+              <Pressable
+                style={styles.footerLink}
+                onPress={leaveGroup}
+                disabled={busy}
+                accessibilityRole="button"
+              >
+                <Text style={styles.footerLinkText}>Leave group</Text>
+              </Pressable>
+              {group.youOwn && (
+                <Pressable
+                  style={styles.footerLink}
+                  onPress={deleteGroup}
+                  disabled={busy}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.footerLinkText}>Delete group</Text>
+                </Pressable>
+              )}
+            </View>
+          </>
         )}
-
-        {group.youOwn && <RenameGroup key={group.name} group={group} />}
-
-        <View style={styles.footer}>
-          <Pressable
-            style={styles.footerLink}
-            onPress={leaveGroup}
-            disabled={busy}
-            accessibilityRole="button"
-          >
-            <Text style={styles.footerLinkText}>Leave group</Text>
-          </Pressable>
-          {group.youOwn && (
-            <Pressable
-              style={styles.footerLink}
-              onPress={deleteGroup}
-              disabled={busy}
-              accessibilityRole="button"
-            >
-              <Text style={styles.footerLinkText}>Delete group</Text>
-            </Pressable>
-          )}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

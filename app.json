@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "plugins": [
       "expo-font",
+      "expo-secure-store",
       "expo-status-bar",
       [
         "expo-image-picker",

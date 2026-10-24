@@ -1,6 +1,13 @@
 import { fonts, makeStyles } from "../../theme";
 
 export const useStyles = makeStyles((colors) => ({
+  peopleToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 48,
+    marginTop: 24,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,

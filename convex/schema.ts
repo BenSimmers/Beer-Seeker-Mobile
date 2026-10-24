@@ -82,7 +82,22 @@ export default defineSchema({
   groups: defineTable({
     name: v.string(),
     ownerId: v.id("users"),
+    /** The pub-crawl stop the group is at now; unset before it starts. */
+    currentStopId: v.optional(v.id("crawlStops")),
+    crawlCompleted: v.optional(v.boolean()),
   }),
+
+  crawlStops: defineTable({
+    groupId: v.id("groups"),
+    /** Sort key within the group; gaps are fine, ties are not. */
+    position: v.number(),
+    name: v.string(),
+    lat: v.number(),
+    lng: v.number(),
+    vicinity: v.string(),
+    category: v.string(),
+    addedBy: v.id("users"),
+  }).index("by_group", ["groupId", "position"]),
 
   // Membership, or an invite until it's accepted. The owner has a row too.
   groupMembers: defineTable({

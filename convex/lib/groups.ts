@@ -1,6 +1,8 @@
 import { ConvexError } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { stopsOf } from "./crawl";
+import { requireUserId } from "./session";
 
 /** Members plus pending invites; small enough to read whole. */
 export const GROUP_MEMBERS_MAX = 20;
@@ -29,22 +31,25 @@ export const rowFor = (ctx: QueryCtx, groupId: Id<"groups">, userId: Id<"users">
     .withIndex("by_group", (q) => q.eq("groupId", groupId).eq("userId", userId))
     .unique();
 
-/** Every group `userId` is in or invited to. */
 export const rowsForUser = (ctx: QueryCtx, userId: Id<"users">) =>
   ctx.db
     .query("groupMembers")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .take(GROUPS_PER_USER_MAX);
 
+export const requireMembership = async (ctx: QueryCtx, groupId: Id<"groups">) => {
+  const me = await requireUserId(ctx);
+  const [group, row] = await Promise.all([ctx.db.get(groupId), rowFor(ctx, groupId, me)]);
+  if (!group || row?.status !== "member") throw new ConvexError("You're not in that group.");
+  return { me, group };
+};
+
 export const deleteGroup = async (ctx: MutationCtx, groupId: Id<"groups">) => {
   for (const row of await rowsOf(ctx, groupId)) await ctx.db.delete(row._id);
+  for (const stop of await stopsOf(ctx, groupId)) await ctx.db.delete(stop._id);
   await ctx.db.delete(groupId);
 };
 
-/**
- * Takes `userId` out of a group, whether member or invitee. An owner leaving
- * hands the group to the longest-standing member; with nobody left it goes.
- */
 export const leaveGroup = async (ctx: MutationCtx, groupId: Id<"groups">, userId: Id<"users">) => {
   const group = await ctx.db.get(groupId);
   if (!group) return;
@@ -60,11 +65,6 @@ export const leaveGroup = async (ctx: MutationCtx, groupId: Id<"groups">, userId
   else await deleteGroup(ctx, groupId);
 };
 
-/**
- * After a block: the blocked person comes out of the blocker's groups, and
- * the blocker leaves theirs. Groups owned by someone else keep both, and
- * hide each from the other in member lists.
- */
 export const separateInGroups = async (
   ctx: MutationCtx,
   blockerId: Id<"users">,

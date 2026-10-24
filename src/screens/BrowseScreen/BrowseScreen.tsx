@@ -52,8 +52,6 @@ export const BrowseScreen: React.FC = () => {
     [places, filter, search, openFirst, favouriteKeys],
   );
 
-  // The local filter is instant and free, so it goes first; the billed search
-  // only runs at the moment it dead-ends.
   const {
     results: remote,
     error: remoteError,
@@ -132,8 +130,6 @@ export const BrowseScreen: React.FC = () => {
       ) : (
         <SectionList
           sections={sections}
-          // Coordinates identify a place independently of its position in the
-          // list, so rows move rather than remount when the sort order shifts.
           keyExtractor={placeKey}
           contentContainerStyle={styles.listContent}
           stickySectionHeadersEnabled={false}
@@ -149,7 +145,6 @@ export const BrowseScreen: React.FC = () => {
               onPress={() => openMap(item)}
             />
           )}
-          // One section on its own is just "the list" — a header would be noise.
           renderSectionHeader={({ section }) =>
             sections.length > 1 ? (
               <SectionLabel style={styles.sectionHeader}>{section.title}</SectionLabel>
@@ -167,13 +162,10 @@ export const BrowseScreen: React.FC = () => {
           ListEmptyComponent={
             !loading && !remoteLoading ? (
               <MutedText style={styles.emptyText}>{emptyMessage}</MutedText>
-            ) : null
+            ) : undefined
           }
         />
       )}
-
-      {/* `selected` outlives `mapVisible` so the sheet doesn't blank out
-          mid-way through the dismiss animation. */}
       <StoreMapModal
         store={selected}
         userLocation={userLocation}
@@ -191,5 +183,4 @@ export const BrowseScreen: React.FC = () => {
   );
 };
 
-/** Coordinates, not list position — stable across re-sorts and across sections. */
 const placeKey = (p: NearbyPlace) => `${p.name}-${p.lat}-${p.lng}`;
