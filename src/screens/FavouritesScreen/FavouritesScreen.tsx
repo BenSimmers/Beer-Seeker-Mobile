@@ -95,13 +95,13 @@ export const FavouritesScreen: React.FC = () => {
           />
         )}
         ListEmptyComponent={
-          searching ? null : (
+          searching ? undefined : (
             <MutedText style={styles.emptyText}>
               No favourites yet. Search above and tap a star to pin a place.
             </MutedText>
           )
         }
-        ListFooterComponent={status ? <MutedText>{status}</MutedText> : null}
+        ListFooterComponent={status ? <MutedText>{status}</MutedText> : undefined}
       />
     </SafeAreaView>
   );

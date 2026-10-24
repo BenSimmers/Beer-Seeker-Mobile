@@ -8,6 +8,7 @@ import {
   deleteGroup,
   leaveGroup,
   normalizeGroupName,
+  requireMembership,
   rowFor,
   rowsForUser,
   rowsOf,
@@ -39,13 +40,6 @@ export type GroupInvite = {
   memberCount: number;
 };
 
-const requireMembership = async (ctx: QueryCtx, groupId: Id<"groups">) => {
-  const me = await requireUserId(ctx);
-  const [group, row] = await Promise.all([ctx.db.get(groupId), rowFor(ctx, groupId, me)]);
-  if (!group || row?.status !== "member") throw new ConvexError("You're not in that group.");
-  return { me, group };
-};
-
 const requireOwnership = async (ctx: QueryCtx, groupId: Id<"groups">) => {
   const found = await requireMembership(ctx, groupId);
   if (found.group.ownerId !== found.me) {
@@ -54,7 +48,6 @@ const requireOwnership = async (ctx: QueryCtx, groupId: Id<"groups">) => {
   return found;
 };
 
-/** Invites friends of `me` who aren't in the group yet, within the size limits. */
 const inviteAll = async (
   ctx: MutationCtx,
   group: Doc<"groups">,
@@ -122,7 +115,6 @@ const describe = async (ctx: QueryCtx, group: Doc<"groups">, me: Id<"users">): P
   };
 };
 
-/** Groups the caller has joined, by name. */
 export const mine = query({
   args: {},
   handler: async (ctx): Promise<Group[]> => {
@@ -136,7 +128,6 @@ export const mine = query({
   },
 });
 
-/** One group the caller is in, or null if they aren't (any more). */
 export const get = query({
   args: { groupId: v.id("groups") },
   handler: async (ctx, { groupId }): Promise<Group | null> => {
@@ -172,7 +163,6 @@ export const invites = query({
   },
 });
 
-/** Makes a group owned by the caller and invites `memberIds`, who must be friends. */
 export const create = mutation({
   args: { name: v.string(), memberIds: v.array(v.id("users")) },
   handler: async (ctx, { name, memberIds }): Promise<Id<"groups">> => {
@@ -219,7 +209,6 @@ export const respond = mutation({
   },
 });
 
-/** Removes a member or cancels an invite. The owner leaves with `leave`. */
 export const removeMember = mutation({
   args: { groupId: v.id("groups"), userId: v.id("users") },
   handler: async (ctx, { groupId, userId }) => {
@@ -254,10 +243,6 @@ export const remove = mutation({
   },
 });
 
-/**
- * Shares the caller's location with every member who is also their friend —
- * sharing stays friends-only, so other members are skipped and counted.
- */
 export const shareWithGroup = mutation({
   args: { groupId: v.id("groups"), minutes: v.number() },
   handler: async (ctx, { groupId, minutes }): Promise<{ shared: number; skipped: number }> => {

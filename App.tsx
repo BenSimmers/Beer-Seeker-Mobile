@@ -30,7 +30,7 @@ import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { ConnectionsScreen } from "./src/screens/ConnectionsScreen";
 import { EditProfileScreen } from "./src/screens/EditProfileScreen";
 import { BlockedScreen } from "./src/screens/BlockedScreen";
-import { GroupScreen, PickGroupMembersScreen } from "./src/screens/GroupScreen";
+import { AddCrawlStopScreen, GroupScreen, PickGroupMembersScreen } from "./src/screens/GroupScreen";
 import type {
   BrowseStackParamList,
   CompassStackParamList,
@@ -78,6 +78,7 @@ const FriendsNavigator = () => (
     <FriendsStack.Screen name="FriendsHome" component={SocialScreen} />
     <FriendsStack.Screen name="Group" component={GroupScreen} />
     <FriendsStack.Screen name="PickGroupMembers" component={PickGroupMembersScreen} />
+    <FriendsStack.Screen name="AddCrawlStop" component={AddCrawlStopScreen} />
     <FriendsStack.Screen name="Profile" component={ProfileScreen} />
     <FriendsStack.Screen name="Connections" component={ConnectionsScreen} />
     <FriendsStack.Screen name="EditProfile" component={EditProfileScreen} />

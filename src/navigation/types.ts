@@ -4,10 +4,6 @@ import type { ConnectionKind } from "../../convex/social";
 import type { FavouritePlace } from "../favourites/places";
 import type { FriendRef } from "../sharing";
 
-/**
- * Registered in every tab's stack, so a profile opened from any tab slides in
- * over it and Back returns there.
- */
 export type ProfileStackParamList = {
   Profile: { userId: Id<"users"> };
   Connections: { userId: Id<"users">; kind: ConnectionKind; name: string };
@@ -32,8 +28,8 @@ export type BrowseStackParamList = ProfileStackParamList & {
 export type FriendsStackParamList = ProfileStackParamList & {
   FriendsHome: undefined;
   Group: { groupId: Id<"groups"> };
-  /** Without a group, creates one; with one, invites more friends to it. */
   PickGroupMembers: { groupId?: Id<"groups"> } | undefined;
+  AddCrawlStop: { groupId: Id<"groups"> };
 };
 
 export type TabParamList = {

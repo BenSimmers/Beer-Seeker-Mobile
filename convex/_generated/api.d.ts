@@ -11,10 +11,12 @@
 import type * as account from "../account.js";
 import type * as auth from "../auth.js";
 import type * as blocks from "../blocks.js";
+import type * as crawl from "../crawl.js";
 import type * as favourites from "../favourites.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as lib_blocks from "../lib/blocks.js";
+import type * as lib_crawl from "../lib/crawl.js";
 import type * as lib_favourites from "../lib/favourites.js";
 import type * as lib_groups from "../lib/groups.js";
 import type * as lib_limits from "../lib/limits.js";
@@ -39,10 +41,12 @@ declare const fullApi: ApiFromModules<{
   account: typeof account;
   auth: typeof auth;
   blocks: typeof blocks;
+  crawl: typeof crawl;
   favourites: typeof favourites;
   groups: typeof groups;
   http: typeof http;
   "lib/blocks": typeof lib_blocks;
+  "lib/crawl": typeof lib_crawl;
   "lib/favourites": typeof lib_favourites;
   "lib/groups": typeof lib_groups;
   "lib/limits": typeof lib_limits;
