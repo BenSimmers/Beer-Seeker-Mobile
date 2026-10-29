@@ -147,7 +147,7 @@ export const FriendsMap: React.FC<{ friends: Person[] }> = ({ friends }) => {
           showsUserLocation
           showsMyLocationButton={false}
           toolbarEnabled={false}
-          userInterfaceStyle="dark"
+          userInterfaceStyle={colors.dark ? "dark" : "light"}
           customMapStyle={Platform.OS === "android" ? darkMapStyle : undefined}
         >
           {pins.map(({ friend, position }) => {

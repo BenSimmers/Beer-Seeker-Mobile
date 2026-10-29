@@ -70,7 +70,7 @@ export const CrawlMap: React.FC<Props> = ({ crawl, selectedId, onSelect }) => {
           showsMyLocationButton={false}
           toolbarEnabled={false}
           pitchEnabled={false}
-          userInterfaceStyle="dark"
+          userInterfaceStyle={colors.dark ? "dark" : "light"}
           customMapStyle={Platform.OS === "android" ? darkMapStyle : undefined}
         >
           {coordinates.length > 1 && (

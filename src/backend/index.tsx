@@ -5,6 +5,8 @@ import * as SecureStore from "expo-secure-store";
 import React from "react";
 import { Platform } from "react-native";
 
+export { useSignOut } from "./useSignOut";
+
 // Inlined at build time by Expo; `npx convex dev` writes it to .env.local.
 // Left unset, the app still runs — only the Friends tab needs a backend.
 const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL ?? "";

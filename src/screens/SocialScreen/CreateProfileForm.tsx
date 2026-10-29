@@ -1,4 +1,3 @@
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -11,7 +10,7 @@ import {
   normalizeUsername,
   usernameError,
 } from "../../../convex/lib/username";
-import { errorMessage } from "../../backend";
+import { errorMessage, useSignOut } from "../../backend";
 import { ErrorBanner, Field, PrimaryButton } from "../../components/ui";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import { useStyles } from "./styles";
@@ -19,7 +18,7 @@ import { useStyles } from "./styles";
 /** Second step of sign-up: an account exists, but nobody can find it yet. */
 export const CreateProfileForm: React.FC = () => {
   const styles = useStyles();
-  const { signOut } = useAuthActions();
+  const signOut = useSignOut();
   const createProfile = useMutation(api.profiles.create);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");

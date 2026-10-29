@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation, useQuery } from "convex/react";
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { api } from "../../../convex/_generated/api";
 import type { Doc } from "../../../convex/_generated/dataModel";
 import type { Person } from "../../../convex/social";
-import { errorMessage } from "../../backend";
+import { errorMessage, useSignOut } from "../../backend";
 import { useToast } from "../../components/Toast";
 import { MutedText, PageTitle, SearchField, SectionLabel } from "../../components/ui";
 import { useTheme } from "../../theme";
@@ -89,7 +88,7 @@ const SharingBanner: React.FC<{ count: number }> = ({ count }) => {
 export const PeopleView: React.FC<{ profile: OwnProfile }> = ({ profile }) => {
   const { colors } = useTheme();
   const styles = useStyles();
-  const { signOut } = useAuthActions();
+  const signOut = useSignOut();
   const [query, setQuery] = useState("");
   const term = useDebounced(query.trim(), SEARCH_DEBOUNCE_MS);
   const searching = query.trim().length > 0;

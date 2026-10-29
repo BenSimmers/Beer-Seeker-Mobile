@@ -1,12 +1,14 @@
 import { Platform } from "react-native";
 
-export type ThemeName = "midnight" | "vintage";
+export type ThemeName = "midnight" | "vintage" | "tavern";
 
-export const THEME_NAMES: ThemeName[] = ["midnight", "vintage"];
+export const THEME_NAMES: ThemeName[] = ["midnight", "vintage", "tavern"];
 
 export const DEFAULT_THEME: ThemeName = "midnight";
 
 export type Palette = {
+  /** Light text on a dark background; drives the status bar, navigation and map chrome. */
+  dark: boolean;
   primary: string;
   primaryMuted: string;
   secondary: string;
@@ -29,6 +31,7 @@ export type Palette = {
 
 // Charcoal and amber — the current look.
 const midnight: Palette = {
+  dark: true,
   primary: "#FFBF00",
   primaryMuted: "#FFBF0022",
   secondary: "#D4AF37",
@@ -50,6 +53,7 @@ const midnight: Palette = {
 // Brown and brass — the palette the app shipped with before the charcoal
 // refresh, restored token-for-token from the pre-`update theme` colours.
 const vintage: Palette = {
+  dark: true,
   primary: "#c8960c",
   primaryMuted: "#c8960c22",
   secondary: "#c8a96e",
@@ -68,15 +72,37 @@ const vintage: Palette = {
   dialTick: "rgba(200,169,110,0.35)",
 };
 
-export const THEMES: Record<ThemeName, Palette> = { midnight, vintage };
+// Paper, ink and rust — the light palette from beerseeker.org.
+const tavern: Palette = {
+  dark: false,
+  primary: "#a44329",
+  primaryMuted: "#a4432922",
+  secondary: "#213d32",
+  tertiary: "#d5b478",
+  background: "#f3efe4",
+  surface: "#e8e5d5",
+  surfaceAlt: "#dcd8c5",
+  border: "#213d3230",
+  headline: "#213d32",
+  body: "#3f4a40",
+  muted: "#63685d",
+  danger: "#b3261e",
+  dangerBorder: "#b3261e44",
+  dangerBg: "#f6dcd5",
+  mapWater: "#c9d6cf",
+  dialTick: "rgba(33,61,50,0.25)",
+};
+
+export const THEMES: Record<ThemeName, Palette> = { midnight, vintage, tavern };
 
 export const THEME_LABELS: Record<ThemeName, { title: string; description: string }> = {
   midnight: { title: "Midnight", description: "Charcoal black with a bright amber accent." },
   vintage: { title: "Vintage", description: "Warm brown and brass — the original look." },
+  tavern: { title: "Tavern", description: "Cream paper, forest-green ink and a rust accent." },
 };
 
 export const isThemeName = (value: unknown): value is ThemeName =>
-  value === "midnight" || value === "vintage";
+  value === "midnight" || value === "vintage" || value === "tavern";
 
 // Compass rose face for the "classic" compass style. Brass-on-parchment reads
 // the same against either background, so it is not themed.

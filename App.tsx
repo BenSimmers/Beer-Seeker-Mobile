@@ -1,4 +1,4 @@
-import { DarkTheme, NavigationContainer, type Theme } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, NavigationContainer, type Theme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,6 +38,8 @@ import type {
   SettingsStackParamList,
 } from "./src/navigation/types";
 import { BackendProvider, backendConfigured } from "./src/backend";
+import { navigationRef } from "./src/navigation/ref";
+import { NotificationRouter, PushRegistrar } from "./src/notifications";
 import { FavouritesProvider, FavouritesSync, useFavourites } from "./src/favourites";
 import { LocationProvider } from "./src/location";
 import { PreferencesProvider, usePreferences } from "./src/preferences";
@@ -97,19 +99,21 @@ const SettingsNavigator = () => (
   </SettingsStack.Navigator>
 );
 
-const useNavTheme = makeThemed(
-  (colors): Theme => ({
-    ...DarkTheme,
+const useNavTheme = makeThemed((colors): Theme => {
+  const base = colors.dark ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    dark: colors.dark,
     colors: {
-      ...DarkTheme.colors,
+      ...base.colors,
       background: colors.background,
       card: colors.surface,
       text: colors.headline,
       border: colors.border,
       primary: colors.primary,
     },
-  }),
-);
+  };
+});
 
 const TabIcon: React.FC<{ name: keyof typeof Ionicons.glyphMap; color: string }> = ({
   name,
@@ -136,9 +140,11 @@ const MainTabs = () => {
   const styles = useStyles();
   const navTheme = useNavTheme();
   const pending = usePendingCount();
+  const [navReady, setNavReady] = useState(false);
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} onReady={() => setNavReady(true)}>
+      {backendConfigured && <NotificationRouter ready={navReady} />}
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
@@ -194,6 +200,7 @@ function AppRoot() {
   const [ageVerified, setAgeVerified] = useState<boolean | null>(null);
   const styles = useStyles();
   const { hydrated } = usePreferences();
+  const { colors } = useTheme();
   const { hydrated: favouritesHydrated } = useFavourites();
   const [hankenLoaded, hankenError] = useHankenGrotesk({
     HankenGrotesk_400Regular,
@@ -226,12 +233,13 @@ function AppRoot() {
   return (
     <SafeAreaProvider>
       <ToastProvider>
-        <StatusBar style="light" />
+        <StatusBar style={colors.dark ? "light" : "dark"} />
         <LocationProvider>
           {backendConfigured && (
             <>
               <LocationPublisher />
               <FavouritesSync />
+              <PushRegistrar />
             </>
           )}
           <MainTabs />

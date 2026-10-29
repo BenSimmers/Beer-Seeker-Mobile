@@ -14,6 +14,7 @@ import {
   rowsOf,
 } from "./lib/groups";
 import { areFriends, avatarUrlFor, profileFor, requireUserId } from "./lib/session";
+import { notify } from "./lib/push";
 import { requireShareMinutes, shareUntil } from "./lib/sharing";
 
 export type GroupMember = {
@@ -78,6 +79,12 @@ const inviteAll = async (
       since: Date.now(),
     });
   }
+  const inviter = await profileFor(ctx, me);
+  await notify(ctx, fresh, {
+    title: "Group invite",
+    body: `${inviter?.displayName ?? "Someone"} invited you to ${group.name}.`,
+    target: { screen: "FriendsHome" },
+  });
 };
 
 const describe = async (ctx: QueryCtx, group: Doc<"groups">, me: Id<"users">): Promise<Group> => {

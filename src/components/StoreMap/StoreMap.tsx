@@ -52,7 +52,7 @@ export const StoreMap: React.FC<Props> = ({
         showsUserLocation
         showsMyLocationButton={false}
         toolbarEnabled={false}
-        userInterfaceStyle="dark"
+        userInterfaceStyle={colors.dark ? "dark" : "light"}
         customMapStyle={Platform.OS === "android" ? darkMapStyle : undefined}
         scrollEnabled={!isThumbnail}
         zoomEnabled={!isThumbnail}

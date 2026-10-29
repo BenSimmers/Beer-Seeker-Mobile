@@ -20,6 +20,7 @@ import type * as lib_crawl from "../lib/crawl.js";
 import type * as lib_favourites from "../lib/favourites.js";
 import type * as lib_groups from "../lib/groups.js";
 import type * as lib_limits from "../lib/limits.js";
+import type * as lib_push from "../lib/push.js";
 import type * as lib_reports from "../lib/reports.js";
 import type * as lib_requests from "../lib/requests.js";
 import type * as lib_session from "../lib/session.js";
@@ -27,6 +28,7 @@ import type * as lib_sharing from "../lib/sharing.js";
 import type * as lib_username from "../lib/username.js";
 import type * as location from "../location.js";
 import type * as migrations from "../migrations.js";
+import type * as notifications from "../notifications.js";
 import type * as profiles from "../profiles.js";
 import type * as reports from "../reports.js";
 import type * as social from "../social.js";
@@ -50,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "lib/favourites": typeof lib_favourites;
   "lib/groups": typeof lib_groups;
   "lib/limits": typeof lib_limits;
+  "lib/push": typeof lib_push;
   "lib/reports": typeof lib_reports;
   "lib/requests": typeof lib_requests;
   "lib/session": typeof lib_session;
@@ -57,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   "lib/username": typeof lib_username;
   location: typeof location;
   migrations: typeof migrations;
+  notifications: typeof notifications;
   profiles: typeof profiles;
   reports: typeof reports;
   social: typeof social;
@@ -88,4 +92,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  pushNotifications: import("@convex-dev/expo-push-notifications/_generated/component.js").ComponentApi<"pushNotifications">;
+};

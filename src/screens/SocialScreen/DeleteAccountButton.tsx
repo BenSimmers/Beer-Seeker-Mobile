@@ -1,9 +1,8 @@
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text } from "react-native";
 import { api } from "../../../convex/_generated/api";
-import { errorMessage } from "../../backend";
+import { errorMessage, useSignOut } from "../../backend";
 import { useToast } from "../../components/Toast";
 import { fonts, makeStyles, useTheme } from "../../theme";
 
@@ -11,7 +10,7 @@ export const DeleteAccountButton: React.FC = () => {
   const { colors } = useTheme();
   const styles = useStyles();
   const toast = useToast();
-  const { signOut } = useAuthActions();
+  const signOut = useSignOut();
   const deleteAccount = useMutation(api.account.deleteAccount);
   const [busy, setBusy] = useState(false);
 

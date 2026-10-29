@@ -10,6 +10,7 @@
       "expo-font",
       "expo-secure-store",
       "expo-status-bar",
+      "expo-notifications",
       [
         "expo-image-picker",
         {

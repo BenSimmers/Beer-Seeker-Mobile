@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+import pushNotifications from "@convex-dev/expo-push-notifications/test";
 import { convexTest } from "convex-test";
 import { api } from "./_generated/api";
 import schema from "./schema";
@@ -7,7 +8,11 @@ const modules = import.meta.glob("./**/*.ts");
 
 export const HOUR = 60;
 
-export const newTest = () => convexTest(schema, modules);
+export const newTest = () => {
+  const t = convexTest(schema, modules);
+  pushNotifications.register(t);
+  return t;
+};
 
 export type T = ReturnType<typeof newTest>;
 export type User = Awaited<ReturnType<typeof makeUser>>;

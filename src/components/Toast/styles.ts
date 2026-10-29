@@ -1,7 +1,8 @@
 import { StyleSheet } from "react-native";
 import { fonts } from "../../theme";
+import type { Palette } from "../../theme/palettes";
 
-export const useStyles = (colors: Record<string, string>) => {
+export const useStyles = (colors: Palette) => {
   return StyleSheet.create({
     container: {
       position: "absolute",

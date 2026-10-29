@@ -8,6 +8,7 @@ import { rowsForUser } from "./lib/groups";
 import { findRequest, incomingRequests, requestedBy } from "./lib/requests";
 import { endSharingBetween } from "./lib/sharing";
 import { normalizeUsername } from "./lib/username";
+import { notify } from "./lib/push";
 
 const SEARCH_MIN = 2;
 const SEARCH_LIMIT = 20;
@@ -77,6 +78,12 @@ export const follow = mutation({
       targetId: userId,
       requestedAt: Date.now(),
     });
+    const mine = await profileFor(ctx, me);
+    await notify(ctx, [userId], {
+      title: "Follow request",
+      body: `${mine?.displayName ?? "Someone"} wants to follow you.`,
+      target: { screen: "FriendsHome" },
+    });
   },
 });
 
@@ -90,6 +97,12 @@ export const respond = mutation({
     await ctx.db.delete(request._id);
     if (accept && !(await findFollow(ctx, userId, me))) {
       await ctx.db.insert("follows", { followerId: userId, followeeId: me });
+      const mine = await profileFor(ctx, me);
+      await notify(ctx, [userId], {
+        title: "Request accepted",
+        body: `${mine?.displayName ?? "Someone"} accepted your follow request.`,
+        target: { screen: "FriendsHome" },
+      });
     }
   },
 });

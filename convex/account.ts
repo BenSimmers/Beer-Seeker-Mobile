@@ -1,12 +1,14 @@
 import { mutation } from "./_generated/server";
 import { leaveGroup, rowsForUser } from "./lib/groups";
+import { pushNotifications } from "./lib/push";
 import { requireUserId } from "./lib/session";
 
 /**
  * Permanently removes the caller and everything tied to them: profile,
  * follows, follow requests, blocks, location shares and reports in both directions, group
  * memberships (owned groups pass to another member), live location,
- * favourites, profile photo, and Convex Auth's accounts and sessions.
+ * favourites, profile photo, push token and notification history, and Convex
+ * Auth's accounts and sessions.
  * App Store guideline 5.1.1(v) requires this to be reachable in-app.
  *
  * The client should call signOut afterwards to clear its stored tokens.
@@ -17,6 +19,8 @@ export const deleteAccount = mutation({
     const userId = await requireUserId(ctx);
 
     for (const row of await rowsForUser(ctx, userId)) await leaveGroup(ctx, row.groupId, userId);
+    await pushNotifications.deleteNotificationsForUser(ctx, { userId });
+    await pushNotifications.removeToken(ctx, { userId });
 
     const [
       profiles,

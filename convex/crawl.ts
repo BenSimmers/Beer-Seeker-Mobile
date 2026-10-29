@@ -1,9 +1,10 @@
 import { ConvexError, v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { CRAWL_STOPS_MAX, stopsOf } from "./lib/crawl";
 import { placeKey } from "./lib/favourites";
-import { requireMembership, rowFor } from "./lib/groups";
+import { requireMembership, rowFor, rowsOf } from "./lib/groups";
+import { notify } from "./lib/push";
 import { requireUserId } from "./lib/session";
 
 const NAME_MAX = 200;
@@ -28,6 +29,24 @@ const requireStop = async (ctx: QueryCtx, stopId: Id<"crawlStops">) => {
   const stop = await ctx.db.get(stopId);
   if (!stop) throw new ConvexError("That stop is no longer on the crawl.");
   return { stop, ...(await requireMembership(ctx, stop.groupId)) };
+};
+
+/** Tells everyone else in the group where the crawl is now. */
+const notifyCrawl = async (
+  ctx: MutationCtx,
+  group: Doc<"groups">,
+  me: Id<"users">,
+  body: string,
+) => {
+  const others = (await rowsOf(ctx, group._id))
+    .filter((r) => r.status === "member" && r.userId !== me)
+    .map((r) => r.userId);
+  await notify(ctx, others, {
+    title: group.name,
+    body,
+    target: { screen: "Group", groupId: group._id },
+    collapseKey: `crawl-${group._id}`,
+  });
 };
 
 export const get = query({
@@ -144,12 +163,16 @@ export const setCurrent = mutation({
   args: { groupId: v.id("groups"), stopId: v.union(v.id("crawlStops"), v.null()) },
   returns: v.null(),
   handler: async (ctx, { groupId, stopId }) => {
-    await requireMembership(ctx, groupId);
-    if (stopId) {
-      const stop = await ctx.db.get(stopId);
-      if (stop?.groupId !== groupId) throw new ConvexError("That stop is no longer on the crawl.");
+    const { me, group } = await requireMembership(ctx, groupId);
+    const stop = stopId ? await ctx.db.get(stopId) : null;
+    if (stopId && stop?.groupId !== groupId) {
+      throw new ConvexError("That stop is no longer on the crawl.");
     }
     await ctx.db.patch(groupId, { currentStopId: stopId ?? undefined, crawlCompleted: false });
+    // Clearing the stop resets the crawl; nobody needs a ping for that.
+    if (stop && stop._id !== group.currentStopId) {
+      await notifyCrawl(ctx, group, me, `Arrived at ${stop.name}`);
+    }
   },
 });
 
@@ -157,12 +180,14 @@ export const finish = mutation({
   args: { groupId: v.id("groups") },
   returns: v.null(),
   handler: async (ctx, { groupId }) => {
-    const { group } = await requireMembership(ctx, groupId);
+    const { me, group } = await requireMembership(ctx, groupId);
     const stops = await stopsOf(ctx, groupId);
     if (!stops.length || group.currentStopId !== stops.at(-1)?._id) {
       throw new ConvexError("Arrive at the final stop before finishing the crawl.");
     }
+    if (group.crawlCompleted) return null;
     await ctx.db.patch(groupId, { crawlCompleted: true });
+    await notifyCrawl(ctx, group, me, "That's the crawl done. Get home safe!");
     return null;
   },
 });
