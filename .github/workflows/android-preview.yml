@@ -7,7 +7,11 @@ on:
       - "v*"
 
 jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+
   build:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -33,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-      
+
       - name: Build Android APK
         run: make build-android-preview
         env:
