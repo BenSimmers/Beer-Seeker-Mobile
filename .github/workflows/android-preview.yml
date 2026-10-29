@@ -6,6 +6,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   checks:
     uses: ./.github/workflows/checks.yml
@@ -14,8 +17,11 @@ jobs:
     needs: checks
     runs-on: ubuntu-latest
     steps:
+      # Full history and tags, so the release notes can find the previous version.
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Manual runs keep whatever version app.json already has.
       - name: Update app.json version from git tag
@@ -39,7 +45,17 @@ jobs:
         run: npm install
 
       - name: Build Android APK
-        run: make build-android-preview
+        run: npx eas-cli build --platform android --profile preview --non-interactive --wait --json > build.json
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY }}
+
+      - name: Publish preview to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -fL -o beer-seeker.apk "$(jq -r '.[0].artifacts.buildUrl' build.json)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="preview-$GITHUB_RUN_NUMBER"; fi
+          PREV=$(git describe --tags --abbrev=0 --match 'v*' HEAD^ 2>/dev/null || true)
+          git log --pretty='- %s' ${PREV:+$PREV..}HEAD > notes.md
+          gh release create "$TAG" beer-seeker.apk --prerelease --title "$TAG" --notes-file notes.md --target "$GITHUB_SHA"
