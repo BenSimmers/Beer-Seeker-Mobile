@@ -14,6 +14,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const deviceTimeZone = (): string | undefined => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const PushRegistrar: React.FC = () => {
   const { isAuthenticated } = useConvexAuth();
   const profile = useQuery(api.profiles.me, isAuthenticated ? {} : "skip");
@@ -25,7 +33,8 @@ export const PushRegistrar: React.FC = () => {
     let cancelled = false;
     getPushToken()
       .then((pushToken) => {
-        if (pushToken && !cancelled) return registerDevice({ pushToken });
+        if (pushToken && !cancelled)
+          return registerDevice({ pushToken, timeZone: deviceTimeZone() });
       })
       .catch((e) => log.warn("push registration failed", e));
     return () => {

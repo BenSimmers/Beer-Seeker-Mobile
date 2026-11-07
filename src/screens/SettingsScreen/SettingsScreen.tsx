@@ -9,6 +9,7 @@ import type { SettingsStackParamList } from "../../navigation/types";
 import { usePreferences, type CompassStyle } from "../../preferences";
 import { THEME_LABELS, THEME_NAMES, useTheme, type ThemeName } from "../../theme";
 import { ClassicGlyph, IconGlyph, ModernGlyph, ThemeGlyph } from "./glyphs";
+import { NotificationsSection } from "./NotificationsSection";
 import { OptionGroup, type Option } from "./OptionGroup";
 import { PrivacySection } from "./PrivacySection";
 import { SettingRow } from "./SettingRow";
@@ -67,6 +68,8 @@ export const SettingsScreen: React.FC = () => {
           </SettingsPanel>
 
           <TravelModeSection />
+
+          <NotificationsSection />
 
           <PrivacySection />
 
