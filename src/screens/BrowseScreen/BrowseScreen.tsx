@@ -125,9 +125,9 @@ export const BrowseScreen: React.FC = () => {
 
       <CategoryChips value={filter} onChange={setFilter} counts={counts} />
 
-      {error ? (
-        <ErrorBanner message={error} style={styles.errorBanner} />
-      ) : (
+      {/* A failed refresh shouldn't take away a list that is still on screen. */}
+      {error && <ErrorBanner message={error} style={styles.errorBanner} />}
+      {(!error || places.length > 0) && (
         <SectionList
           sections={sections}
           keyExtractor={placeKey}

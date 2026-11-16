@@ -6,6 +6,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "experiments": {
+      "reactCompiler": true
+    },
     "plugins": [
       "expo-font",
       "expo-secure-store",

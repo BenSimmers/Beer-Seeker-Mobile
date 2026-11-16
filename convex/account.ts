@@ -21,6 +21,11 @@ export const deleteAccount = mutation({
     for (const row of await rowsForUser(ctx, userId)) await leaveGroup(ctx, row.groupId, userId);
     await pushNotifications.deleteNotificationsForUser(ctx, { userId });
     await pushNotifications.removeToken(ctx, { userId });
+    const nudge = await ctx.db
+      .query("weekendNudges")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (nudge) await ctx.db.delete(nudge._id);
 
     const [
       profiles,

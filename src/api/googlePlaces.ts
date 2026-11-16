@@ -1,6 +1,8 @@
 import { GOOGLE_MAPS_API_KEY, SEARCH_RADIUS_M } from "../config";
+import { savePlaces, savedPlacesNear, searchSavedPlaces } from "../cache/savedPlaces";
 import { readStoreCache, storeCacheKey, writeStoreCache } from "../cache/storeCache";
 import { placesLogger as log } from "../logger";
+import { isOffline } from "../network";
 import { CATEGORY_LABELS, CATEGORY_PLURALS, PLACE_CATEGORIES, isPlaceCategory } from "../types";
 import type {
   CategoryFilter,
@@ -9,7 +11,7 @@ import type {
   NearbyPlace,
   StoreProvider,
 } from "../types";
-import { NETWORK_ERROR, isAbort } from "../utils/errors";
+import { NETWORK_ERROR, isAbort, isNetworkError } from "../utils/errors";
 import { asArray, asRecord } from "../utils/parse";
 import {
   MAX_ATTEMPTS,
@@ -66,6 +68,10 @@ async function requestPlaces(
     throw new Error("Missing Google Maps API key. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env.");
   }
 
+  // With no connection at all, the retries below would only delay the saved
+  // places the caller falls back to.
+  if (await isOffline()) throw new Error(NETWORK_ERROR);
+
   const res = await postWithRetry(url, JSON.stringify(body), signal);
 
   if (!res.ok) {
@@ -102,20 +108,45 @@ function searchNearby(
   );
 }
 
+const categoryOf = (p: GooglePlace): NearbyPlace["category"] =>
+  isPlaceCategory(p.primaryType) ? p.primaryType : "other";
+
 const toNearbyPlaces = (places: GooglePlace[], userLat: number, userLng: number): NearbyPlace[] =>
   places
     .filter(hasLocation)
     .map(
-      (p): NearbyPlace => ({
-        ...toStore(p, userLat, userLng, "Unknown"),
-        category: isPlaceCategory(p.primaryType) ? p.primaryType : "other",
-      }),
+      (p): NearbyPlace => ({ ...toStore(p, userLat, userLng, "Unknown"), category: categoryOf(p) }),
     )
     .sort((a, b) => a.distance - b.distance);
 
 /**
+ * Runs `request`; if the network is what failed, answers from the places saved
+ * on the device instead. Any other failure — and a network failure with nothing
+ * saved to offer (`saved` resolving null) — is rethrown as it was.
+ */
+async function orSaved<T>(request: () => Promise<T>, saved: () => Promise<T | null>): Promise<T> {
+  try {
+    return await request();
+  } catch (e) {
+    if (!isNetworkError(e)) throw e;
+    const fallback = await saved();
+    if (fallback == null) throw e;
+    log.info("no connection — answering from saved places");
+    return fallback;
+  }
+}
+
+// Live responses top out at 20 places; saved ones can run to hundreds in a busy
+// area, which is more cards than the browse list can re-sort on every step.
+const OFFLINE_LIST_LIMIT = 40;
+
+const matchesFilter = (filter: CategoryFilter, category: NearbyPlace["category"]): boolean =>
+  filter === "all" ? category !== "other" : category === filter;
+
+/**
  * Nearest venue matching `filter`, cached per ~1 km grid cell.
- * `skipCache` forces a fresh fetch.
+ * `skipCache` forces a fresh fetch. Without a connection, the nearest saved
+ * place that matches stands in.
  */
 export async function fetchNearestPlace(
   filter: CategoryFilter,
@@ -134,21 +165,32 @@ export async function fetchNearestPlace(
     }
   }
 
-  const types = filter === "all" ? PLACE_CATEGORIES : [filter];
-  const places = await searchNearby(userLat, userLng, types, 5, signal);
+  return orSaved(
+    async () => {
+      const types = filter === "all" ? PLACE_CATEGORIES : [filter];
+      const places = await searchNearby(userLat, userLng, types, 5, signal);
 
-  const wanted = (p: GooglePlace) =>
-    filter === "all" ? isPlaceCategory(p.primaryType) : p.primaryType === filter;
+      const wanted = (p: GooglePlace) =>
+        filter === "all" ? isPlaceCategory(p.primaryType) : p.primaryType === filter;
 
-  const place = places.filter(hasLocation).find(wanted);
-  if (!place) {
-    throw new Error(`No ${CATEGORY_PLURALS[filter]} found within ${SEARCH_RADIUS_M / 1000} km.`);
-  }
+      const place = places.filter(hasLocation).find(wanted);
+      if (!place) {
+        throw new Error(
+          `No ${CATEGORY_PLURALS[filter]} found within ${SEARCH_RADIUS_M / 1000} km.`,
+        );
+      }
 
-  const fallbackName = filter === "all" ? "Venue" : CATEGORY_LABELS[filter];
-  const store = toStore(place, userLat, userLng, fallbackName);
-  await writeStoreCache(key, store);
-  return store;
+      const fallbackName = filter === "all" ? "Venue" : CATEGORY_LABELS[filter];
+      const store = toStore(place, userLat, userLng, fallbackName);
+      await writeStoreCache(key, store);
+      await savePlaces([{ ...store, category: categoryOf(place) }]);
+      return store;
+    },
+    async () => {
+      const saved = await savedPlacesNear(userLat, userLng, SEARCH_RADIUS_M);
+      return saved.find((p) => matchesFilter(filter, p.category)) ?? null;
+    },
+  );
 }
 
 /** Binds a filter so the result is the `StoreProvider` the compass hook expects. */
@@ -157,20 +199,34 @@ export const nearestPlaceProvider =
   (userLat, userLng, signal, skipCache) =>
     fetchNearestPlace(filter, userLat, userLng, signal, skipCache);
 
-/** All nearby venues for the Browse screen's category filter. Always fresh — never cached. */
+/**
+ * All nearby venues for the Browse screen's category filter. Always fresh while
+ * there is a connection; without one, the saved places inside the same radius.
+ */
 export async function fetchNearbyPlaces(
   userLat: number,
   userLng: number,
   signal: AbortSignal,
 ): Promise<NearbyPlace[]> {
-  const places = await searchNearby(userLat, userLng, PLACE_CATEGORIES, 20, signal);
-  return toNearbyPlaces(places, userLat, userLng);
+  return orSaved(
+    async () => {
+      const places = await searchNearby(userLat, userLng, PLACE_CATEGORIES, 20, signal);
+      const nearby = toNearbyPlaces(places, userLat, userLng);
+      await savePlaces(nearby);
+      return nearby;
+    },
+    async () => {
+      const saved = await savedPlacesNear(userLat, userLng, SEARCH_RADIUS_M);
+      return saved.length > 0 ? saved.slice(0, OFFLINE_LIST_LIMIT) : null;
+    },
+  );
 }
 
 /**
  * Name/keyword search. Where the nearby search *restricts* to SEARCH_RADIUS_M,
  * this only *biases* toward the user, so results can be any distance away.
- * Never cached — the query is the key here, not the grid cell.
+ * Never cached — the query is the key here, not the grid cell. Without a
+ * connection it searches the saved places by name and address instead.
  */
 export async function searchPlacesByText(
   query: string,
@@ -182,17 +238,27 @@ export async function searchPlacesByText(
   // searchText takes a single includedType rather than a list, so categories are
   // applied afterwards instead: a search by name should find the thing you named,
   // whatever Google files it under.
-  const places = await requestPlaces(
-    PLACES_TEXT_URL,
-    {
-      textQuery: query,
-      maxResultCount: 20,
-      rankPreference: "DISTANCE",
-      locationBias: {
-        circle: { center: { latitude: userLat, longitude: userLng }, radius: SEARCH_RADIUS_M },
-      },
+  return orSaved(
+    async () => {
+      const places = await requestPlaces(
+        PLACES_TEXT_URL,
+        {
+          textQuery: query,
+          maxResultCount: 20,
+          rankPreference: "DISTANCE",
+          locationBias: {
+            circle: { center: { latitude: userLat, longitude: userLng }, radius: SEARCH_RADIUS_M },
+          },
+        },
+        signal,
+      );
+      const found = toNearbyPlaces(places, userLat, userLng);
+      await savePlaces(found);
+      return found;
     },
-    signal,
+    async () => {
+      const saved = await searchSavedPlaces(query, userLat, userLng);
+      return saved.length > 0 ? saved.slice(0, OFFLINE_LIST_LIMIT) : null;
+    },
   );
-  return toNearbyPlaces(places, userLat, userLng);
 }

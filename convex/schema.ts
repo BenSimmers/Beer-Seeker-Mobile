@@ -111,6 +111,19 @@ export default defineSchema({
     .index("by_group", ["groupId", "userId"])
     .index("by_user", ["userId", "status"]),
 
+  // When to send the Friday/Saturday 6pm "going out?" push, in the user's own
+  // time zone (reported by their device). `nextAt` is unset while opted out or
+  // with no device registered, which keeps the row out of the cron's range
+  weekendNudges: defineTable({
+    userId: v.id("users"),
+    /** IANA name, e.g. "Australia/Sydney". */
+    timeZone: v.string(),
+    optedOut: v.boolean(),
+    nextAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_nextAt", ["nextAt"]),
+
   // `blockerId` has blocked `blockedId`. Hides the pair from each other both
   // ways; blocking also removes follows and location shares between them.
   blocks: defineTable({
