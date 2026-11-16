@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { searchPlacesByText } from "../api/googlePlaces";
 import { browseLogger as log } from "../logger";
+import { useOnline } from "../network";
 import { NETWORK_ERROR, errorMessage, isAbort } from "../utils/errors";
 import type { NearbyPlace, UserLocation } from "../types";
 
@@ -21,6 +22,7 @@ export const useTextSearch = (
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inFlight = useRef<AbortController | null>(null);
+  const online = useOnline();
 
   // Held in a ref, not a dependency: the bias centre barely moves the results,
   // and re-running on every 10 m position update would bill for nothing.
@@ -43,6 +45,7 @@ export const useTextSearch = (
       const controller = new AbortController();
       inFlight.current = controller;
 
+      if (!online) log.debug("no connection — searching saved places");
       setLoading(true);
       setError(null);
       try {
@@ -61,7 +64,7 @@ export const useTextSearch = (
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [active, trimmed]);
+  }, [active, trimmed, online]);
 
   // A keystroke supersedes whatever was in flight; unmounting cancels it outright.
   useEffect(() => () => inFlight.current?.abort(), []);

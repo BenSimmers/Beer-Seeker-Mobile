@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NETWORK_ERROR, errorMessage, isAbort } from "../utils/errors";
+import { useOnline } from "../network";
 import { hasMovedBeyondThreshold } from "../utils/geo";
 import type { Origin, UserLocation } from "../types";
 
@@ -20,6 +21,9 @@ export const useGeoFetch = <T>(origin: Origin | null, fetcher: GeoFetcher<T>, lo
     location: UserLocation;
   } | null>(null);
   const inFlight = useRef<AbortController | null>(null);
+  const online = useOnline();
+  const onlineRef = useRef(online);
+  const refreshOnReconnect = useRef(false);
 
   const load = useCallback(
     async ({ lat, lng, source }: Origin, force = false) => {
@@ -42,12 +46,15 @@ export const useGeoFetch = <T>(origin: Origin | null, fetcher: GeoFetcher<T>, lo
       const controller = new AbortController();
       inFlight.current = controller;
 
+      const startedOffline = !onlineRef.current;
       setLoading(true);
       setError(null);
       try {
         setData(await fetcher(lat, lng, controller.signal, force));
+        refreshOnReconnect.current = startedOffline || !onlineRef.current;
       } catch (e) {
         if (isAbort(e)) return;
+        refreshOnReconnect.current = true;
         setError(errorMessage(e, NETWORK_ERROR));
       } finally {
         // Only the newest request owns the spinner — an aborted one clearing it
@@ -57,6 +64,16 @@ export const useGeoFetch = <T>(origin: Origin | null, fetcher: GeoFetcher<T>, lo
     },
     [fetcher, log],
   );
+
+  useEffect(() => {
+    const reconnected = online && !onlineRef.current;
+    onlineRef.current = online;
+    if (!reconnected || !refreshOnReconnect.current || !origin) return;
+    refreshOnReconnect.current = false;
+    lastFetched.current = null;
+    // oxlint-disable-next-line react/set-state-in-effect
+    load(origin);
+  }, [online, origin, load]);
 
   useEffect(() => {
     // Fetching is the external system this effect syncs with; the loading flag

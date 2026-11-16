@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LiquorStore } from "../types";
+import type { LiquorStore, NearbyPlace } from "../types";
 import { NETWORK_ERROR, isAbort } from "../utils/errors";
 import { MAX_ATTEMPTS, PLACES_NEARBY_URL, PLACES_TEXT_URL } from "./config";
 import {
@@ -13,6 +13,18 @@ const cache = vi.hoisted(() => ({
   readStoreCache: vi.fn<(key: string) => Promise<LiquorStore | null>>(),
   writeStoreCache: vi.fn<(key: string, store: LiquorStore) => Promise<void>>(),
 }));
+
+const saved = vi.hoisted(() => ({
+  savePlaces: vi.fn<(places: NearbyPlace[]) => Promise<void>>(),
+  savedPlacesNear: vi.fn<(lat: number, lng: number, radius: number) => Promise<NearbyPlace[]>>(),
+  searchSavedPlaces: vi.fn<(query: string, lat: number, lng: number) => Promise<NearbyPlace[]>>(),
+}));
+
+const network = vi.hoisted(() => ({ isOffline: vi.fn<() => Promise<boolean>>() }));
+
+vi.mock("../network", () => network);
+
+vi.mock("../cache/savedPlaces", () => saved);
 
 vi.mock("../config", () => ({ GOOGLE_MAPS_API_KEY: "test-key", SEARCH_RADIUS_M: 5000 }));
 
@@ -46,6 +58,12 @@ const jsonResponse = (body: unknown, status = 200) =>
     text: async () => JSON.stringify(body),
   }) as Response;
 
+const savedPlace = (over: Partial<NearbyPlace> = {}): NearbyPlace => ({
+  ...liquorStore(),
+  category: "liquor_store",
+  ...over,
+});
+
 const signal = () => new AbortController().signal;
 
 // Most cases exercise the original liquor-store target; bind it once.
@@ -56,6 +74,10 @@ let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   cache.readStoreCache.mockResolvedValue(null);
   cache.writeStoreCache.mockResolvedValue(undefined);
+  saved.savePlaces.mockResolvedValue(undefined);
+  saved.savedPlacesNear.mockResolvedValue([]);
+  saved.searchSavedPlaces.mockResolvedValue([]);
+  network.isOffline.mockResolvedValue(false);
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -339,5 +361,112 @@ describe("searchPlacesByText", () => {
 
     expect(cache.readStoreCache).not.toHaveBeenCalled();
     expect(cache.writeStoreCache).not.toHaveBeenCalled();
+  });
+});
+
+describe("without a connection", () => {
+  beforeEach(() => {
+    network.isOffline.mockResolvedValue(true);
+  });
+
+  it("skips the request and its retries entirely", async () => {
+    await expect(fetchNearestStore(0, 0, signal())).rejects.toThrow(NETWORK_ERROR);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("points the compass at the nearest saved place matching the filter", async () => {
+    saved.savedPlacesNear.mockResolvedValue([
+      savedPlace({ name: "Near Pub", category: "pub", distance: 100 }),
+      savedPlace({ name: "Near Bottle Shop", distance: 300 }),
+      savedPlace({ name: "Far Bottle Shop", distance: 900 }),
+    ]);
+
+    await expect(fetchNearestStore(0, 0, signal())).resolves.toMatchObject({
+      name: "Near Bottle Shop",
+    });
+    await expect(fetchNearestPlace("pub", 0, 0, signal())).resolves.toMatchObject({
+      name: "Near Pub",
+    });
+    expect(saved.savedPlacesNear).toHaveBeenCalledWith(0, 0, 5000);
+    expect(cache.writeStoreCache).not.toHaveBeenCalled();
+  });
+
+  it('leaves untracked categories out of the "all" filter', async () => {
+    saved.savedPlacesNear.mockResolvedValue([
+      savedPlace({ name: "Corner Grocer", category: "other", distance: 50 }),
+      savedPlace({ name: "The Local", category: "pub", distance: 400 }),
+    ]);
+
+    await expect(fetchNearestPlace("all", 0, 0, signal())).resolves.toMatchObject({
+      name: "The Local",
+    });
+  });
+
+  it("reports the network error when no saved place matches the filter", async () => {
+    saved.savedPlacesNear.mockResolvedValue([savedPlace({ category: "pub" })]);
+    await expect(fetchNearestPlace("wine_bar", 0, 0, signal())).rejects.toThrow(NETWORK_ERROR);
+  });
+
+  it("still serves a fresh cache hit first", async () => {
+    cache.readStoreCache.mockResolvedValue(liquorStore({ name: "Cached Shop" }));
+    await expect(fetchNearestStore(0, 0, signal())).resolves.toMatchObject({ name: "Cached Shop" });
+    expect(saved.savedPlacesNear).not.toHaveBeenCalled();
+  });
+
+  it("lists the saved places nearby, or fails when there are none", async () => {
+    const places = [savedPlace({ name: "A" }), savedPlace({ name: "B", category: "bar" })];
+    saved.savedPlacesNear.mockResolvedValue(places);
+    await expect(fetchNearbyPlaces(0, 0, signal())).resolves.toEqual(places);
+
+    saved.savedPlacesNear.mockResolvedValue([]);
+    await expect(fetchNearbyPlaces(0, 0, signal())).rejects.toThrow(NETWORK_ERROR);
+  });
+
+  it("searches the saved places by text, or fails when nothing matches", async () => {
+    const places = [savedPlace({ name: "Far Cellars" })];
+    saved.searchSavedPlaces.mockResolvedValue(places);
+    await expect(searchPlacesByText("cellars", 1, 2, signal())).resolves.toEqual(places);
+    expect(saved.searchSavedPlaces).toHaveBeenCalledWith("cellars", 1, 2);
+
+    saved.searchSavedPlaces.mockResolvedValue([]);
+    await expect(searchPlacesByText("cellars", 1, 2, signal())).rejects.toThrow(NETWORK_ERROR);
+  });
+});
+
+describe("saving places for offline use", () => {
+  it("saves the nearest place with its category", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ places: [place("The Local", 0, 1, "pub")] }));
+
+    const store = await fetchNearestPlace("all", 0, 0, signal());
+
+    expect(saved.savePlaces).toHaveBeenCalledWith([{ ...store, category: "pub" }]);
+  });
+
+  it("saves the browse list and text search results", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ places: [place("The Local", 0, 1, "pub")] }));
+
+    const nearby = await fetchNearbyPlaces(0, 0, signal());
+    expect(saved.savePlaces).toHaveBeenLastCalledWith(nearby);
+
+    const found = await searchPlacesByText("local", 0, 0, signal());
+    expect(saved.savePlaces).toHaveBeenLastCalledWith(found);
+  });
+
+  it("falls back to saved places when every attempt fails mid-request", async () => {
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new TypeError("Network request failed"));
+    saved.savedPlacesNear.mockResolvedValue([savedPlace({ name: "Saved Shop" })]);
+
+    const promise = fetchNearestStore(0, 0, signal());
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(promise).resolves.toMatchObject({ name: "Saved Shop" });
+  });
+
+  it("does not hide a server error behind saved places", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ error: "denied" }, 403));
+    saved.savedPlacesNear.mockResolvedValue([savedPlace()]);
+
+    await expect(fetchNearestStore(0, 0, signal())).rejects.toThrow("Places HTTP 403");
   });
 });

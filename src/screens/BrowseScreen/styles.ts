@@ -63,6 +63,7 @@ export const useStyles = makeStyles((colors) => ({
   },
   errorBanner: {
     marginHorizontal: 20,
+    marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,

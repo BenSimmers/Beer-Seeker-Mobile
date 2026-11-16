@@ -1,5 +1,9 @@
 import { DarkTheme, DefaultTheme, NavigationContainer, type Theme } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {
+  BottomTabBar,
+  createBottomTabNavigator,
+  type BottomTabBarProps,
+} from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -19,6 +23,7 @@ import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
+import { OfflineBanner } from "./src/components/OfflineBanner";
 import { ToastProvider } from "./src/components/Toast";
 import { BrowseScreen } from "./src/screens/BrowseScreen";
 import { CompassScreen } from "./src/screens/CompassScreen";
@@ -134,6 +139,13 @@ const renderSettingsIcon = ({ color }: { color: string }) => (
 
 const TAB_BAR_CONTENT_HEIGHT = 44;
 
+const renderTabBar = (props: BottomTabBarProps) => (
+  <>
+    <OfflineBanner />
+    <BottomTabBar {...props} />
+  </>
+);
+
 const MainTabs = () => {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -146,6 +158,7 @@ const MainTabs = () => {
     <NavigationContainer ref={navigationRef} theme={navTheme} onReady={() => setNavReady(true)}>
       {backendConfigured && <NotificationRouter ready={navReady} />}
       <Tab.Navigator
+        tabBar={renderTabBar}
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
